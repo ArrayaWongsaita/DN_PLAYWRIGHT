@@ -22,8 +22,8 @@ export class CheckoutPage {
     this.acceptTerms = page.getByLabel("ฉันยอมรับเงื่อนไขการสั่งซื้อ");
     this.orderTotal = page.getByTestId("order-total");
     this.submitButton = page.getByRole("button", { name: "ยืนยันคำสั่งซื้อ" });
-    // ฟอร์มบัตรอยู่ใน iframe: ใช้ frameLocator แล้วหา element ข้างในต่อได้ตามปกติ (บท 29)
-    this.cardFrame = page.frameLocator('iframe[title="ฟอร์มบัตรเครดิต"]');
+    // ฟอร์มบัตรอยู่ใน iframe: ใช้ getByTitle หา iframe แล้ว contentFrame() ได้ FrameLocator ที่หา element ข้างในต่อได้ตามปกติ (บท 29)
+    this.cardFrame = page.getByTitle("ฟอร์มบัตรเครดิต").contentFrame();
     // ข้อความนี้อยู่ที่หน้าหลัก (นอก iframe) ขึ้นเมื่อ iframe ส่ง postMessage มาบอกว่าบัตรผ่าน
     this.cardConfirmed = page.getByRole("status").filter({ hasText: "ยืนยันบัตรแล้ว" });
   }

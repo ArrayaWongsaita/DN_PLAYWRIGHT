@@ -47,9 +47,9 @@ test("หน้าแรก: เวลา 13:00 ทักทายว่าส�
 // ------------------------------------------------
 test("หน้าแรก: Flash Sale เที่ยงวันเหลือเวลา 11:59:59", async ({ page }) => {
   // เริ่มก่อนเวลาเป้าหมาย 1 ชั่วโมงให้หน้าโหลดตามปกติ แล้ว pauseAt ไปเที่ยงวันตรง
-  await page.clock.install({ time: new Date("2026-12-31T11:00:00+07:00") });
+  await page.clock.install({ time: new Date("2030-12-31T11:00:00+07:00") });
   await page.goto("/");
-  await page.clock.pauseAt(new Date("2026-12-31T12:00:00+07:00"));
+  await page.clock.pauseAt(new Date("2030-12-31T12:00:00+07:00"));
 
   // 23:59:59 - 12:00:00 = 11 ชั่วโมง 59 นาที 59 วินาที
   await expect(page.getByRole("timer", { name: "เวลาที่เหลือ" })).toHaveText("เหลือเวลา 11:59:59");
@@ -63,9 +63,9 @@ test("หน้าแรก: Flash Sale เที่ยงวันเหลื�
 //        runFor เดินเวลาไปทีละนิดและรัน setInterval ของหน้าทุกครั้งที่ถึงเวลา (10 วินาที = 10 ครั้ง)
 // ------------------------------------------------
 test("หน้าแรก: เวลาเดินไป 10 วินาที ตัวนับลดลง 10", async ({ page }) => {
-  await page.clock.install({ time: new Date("2026-12-31T22:00:00+07:00") });
+  await page.clock.install({ time: new Date("2030-12-31T22:00:00+07:00") });
   await page.goto("/");
-  await page.clock.pauseAt(new Date("2026-12-31T23:00:00+07:00"));
+  await page.clock.pauseAt(new Date("2030-12-31T23:00:00+07:00"));
 
   const timer = page.getByRole("timer", { name: "เวลาที่เหลือ" });
   await expect(timer).toHaveText("เหลือเวลา 00:59:59");
@@ -83,7 +83,7 @@ test("หน้าแรก: เวลาเดินไป 10 วินาท�
 //        ตัวนับของหน้าอัปเดตทุก 1 วินาที จึงพอให้หน้าอัปเดตเป็นข้อความจบแล้วได้
 // ------------------------------------------------
 test("หน้าแรก: ข้ามเวลาไปหลัง Flash Sale จบ", async ({ page }) => {
-  await page.clock.install({ time: new Date("2026-12-31T23:59:50+07:00") });
+  await page.clock.install({ time: new Date("2030-12-31T23:59:50+07:00") });
   await page.goto("/");
 
   // กระโดดข้ามไปหลังหมดเวลา (23:59:50 + 20 วินาที = 00:00:10 ของวันใหม่)

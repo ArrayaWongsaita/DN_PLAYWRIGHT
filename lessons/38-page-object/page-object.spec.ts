@@ -144,7 +144,7 @@ test("CartPage.increase() แล้วใช้โค้ดส่วนลดต
   // 590 x 3 = 1,770
   await expect(cartPage.subtotal).toHaveText("1,770 บาท");
 
-  // method หลายตัวต่อกันเป็น flow ได้ ลด 10% ของ 1,770 = 177 (ปัดเศษแล้ว) ยอดสุทธิ 1,593
+  // method หลายตัวต่อกันเป็น flow ได้ ลด 10% ของ 1,770 = 177 ยอดสุทธิ 1,593
   await cartPage.applyCoupon("DN10");
   await expect(cartPage.total).toHaveText("1,593 บาท");
 });

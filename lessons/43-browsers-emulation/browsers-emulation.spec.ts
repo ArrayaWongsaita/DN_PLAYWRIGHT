@@ -48,7 +48,7 @@ test("หัวเว็บแสดงเมนูต่างกันระ�
 // ข้อ 1: บังคับ viewport มือถือเอง
 // ------------------------------------------------
 test.describe("ข้อ 1: viewport มือถือ", () => {
-  // viewport ที่ test.use ทับ viewport ของ project (ผู้เขียนรันผ่านบน chromium, webkit และ Mobile Safari ส่วน firefox ไม่ได้รัน)
+  // viewport ที่ test.use ทับ viewport ของ project
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("จอ 390x844 เห็นปุ่มเปิดเมนู", async ({ page }) => {

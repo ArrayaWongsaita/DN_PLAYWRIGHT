@@ -103,9 +103,11 @@ test.describe("ใส่ ลบ แล้วตะกร้าว่าง", () 
 
   // ทำไมสร้าง page เอง: fixture page เกิดใหม่ทุก test ส่งต่อ cookie ให้ขั้นถัดไปไม่ได้
   let page: Page;
+
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage();
   });
+
   test.afterAll(async () => {
     await page.close();
   });

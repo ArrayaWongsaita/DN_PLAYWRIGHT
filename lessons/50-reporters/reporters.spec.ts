@@ -49,6 +49,7 @@ test("หน้าสาขาแบ่งเป็น step", async ({ page }) =
   await test.step("เปิดหน้าสาขา", async () => {
     await page.goto("/stores");
   });
+
   await test.step("ตรวจหัวข้อ", async () => {
     await expect(page.getByRole("heading", { name: "สาขาของเรา", level: 1 })).toBeVisible();
   });

@@ -182,6 +182,8 @@ test("หน้า products: เปลี่ยนจำนวนในคำข
 
   await page.route("**/api/cart", async (route) => {
     // continue = ส่งคำขอไปที่ server จริง แต่เปลี่ยนบางส่วนได้ ตรงนี้เปลี่ยน body เป็นจำนวน 2 (header ยังเป็น JSON ตามเดิม)
+    // แก้เฉพาะคำขอ POST ส่วนคำขออื่นที่ตรง pattern เดียวกัน (เช่น GET) ปล่อยผ่านตามปกติ
+    if (route.request().method() !== "POST") return route.fallback();
     await route.continue({ postData: JSON.stringify({ productId: "p06", quantity: 2 }) });
   });
 
