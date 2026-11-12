@@ -27,8 +27,10 @@ function runAndWait(command) {
 
 if (needsBuild(process.cwd())) {
   const build = await runAndWait("pnpm exec next build");
-  if (build.code !== 0 || stopping) process.exit(build.code || 1);
+  if (stopping) process.exit(0);
+  if (build.code !== 0) process.exit(build.code);
 }
 
 const server = await runAndWait(`pnpm exec next start -p ${PORT}`);
-process.exit(server.code);
+// หยุดด้วย SIGINT/SIGTERM ที่เราส่งต่อเอง ถือเป็นการหยุดตามปกติ
+process.exit(stopping ? 0 : server.code);

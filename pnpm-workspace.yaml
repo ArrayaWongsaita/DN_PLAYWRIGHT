@@ -1,3 +1,4 @@
-# Packages whose build scripts pnpm may run (keeps `pnpm install` free of "Ignored build scripts" warnings).
+# Packages whose build scripts pnpm may run, so `pnpm install` never prints "Ignored build scripts".
+# `sharp` is a precaution only (Next.js optional image dependency); no package needs a build script today.
 allowBuilds:
   sharp: true
