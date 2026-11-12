@@ -121,7 +121,7 @@ pnpm test 22-steps-parameterize
 
 ## แบบฝึกหัดในบทนี้
 
-1. เขียน flow login ด้วย `test.step` สองชั้น (เข้าสู่ระบบ → มี step ย่อยกรอกข้อมูลและกดปุ่ม, แล้ว step ตรวจหน้าบัญชี)
+1. เขียน flow login ด้วย `test.step` สองชั้น (เข้าสู่ระบบ → มี step ย่อยกรอกข้อมูลและกดปุ่ม, แล้ว step ตรวจหน้าบัญชี) การซ้อน step ทำให้ `pnpm lint` เตือน `playwright/no-nested-step` ให้ใส่คอมเมนต์เหมือนในตัวอย่างที่ 1 เหนือบรรทัด step ย่อย: `// eslint-disable-next-line playwright/no-nested-step -- บทนี้สอนซ้อน step โดยตั้งใจ`
 2. วนสร้าง test จาก 4 หมวดสินค้าตรวจจำนวนที่กรองได้
 3. วนสร้าง test จากสินค้า p01–p03 โดยในแต่ละ test แบ่ง step เปิดหน้า / ตรวจชื่อ / ตรวจราคา
 
