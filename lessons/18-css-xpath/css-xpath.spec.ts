@@ -25,7 +25,7 @@ test("หน้า /products หาการ์ดสินค้าด้วย
   await expect(byXpath).toHaveCount(10);
   await expect(byRole).toHaveCount(10);
 
-  // XPath ยกตัวอย่างสิ่งที่ CSS ทำไม่ได้ในอดีต: ขึ้นไปหา parent (..)
+  // XPath ยกตัวอย่างสิ่งที่ CSS เดินขึ้นไปหา parent ตรงๆ ไม่ได้: ขึ้นไปหา parent (..)
   // เริ่มจาก heading ของเมาส์ แล้วขึ้นไป 1 ชั้นได้ <li> ของการ์ดเมาส์
   const mouseCard = page.getByRole("heading", { name: "เมาส์ไร้สาย" }).locator("xpath=..");
   await expect(mouseCard).toContainText("590 บาท");
@@ -112,7 +112,7 @@ test("หาการ์ดหมวกแก๊ปด้วย XPath", async ({
 // ------------------------------------------------
 // ข้อ 3: หน้า /products ใช้ and หาลิงก์ (link) ที่มีข้อความ "หูฟังไร้สาย DN Buds" แล้วต้องเจอ 1 ตัว
 // แนวทาง: page.getByRole("link").and(page.getByText("หูฟังไร้สาย DN Buds")) เหมือนตัวอย่างที่ 3
-//        ถ้าเจอมากกว่า 1 ให้ดูข้อความ error ว่า element ไหนบ้าง (รูปไม่ใช่ลิงก์ จึงไม่ควรเข้ามา)
+//        getByText หาจากข้อความที่แสดงเท่านั้น ไม่ดู alt ของรูป จึงตรงแค่ตัวลิงก์ ถ้าเจอมากกว่า 1 ให้ดูข้อความ error ว่า element ไหนบ้าง
 // ------------------------------------------------
 test("ใช้ and หาลิงก์หูฟัง", async ({ page }) => {
   await page.goto("/products");
