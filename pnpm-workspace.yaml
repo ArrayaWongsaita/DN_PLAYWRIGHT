@@ -1,0 +1,3 @@
+# Packages whose build scripts pnpm may run (keeps `pnpm install` free of "Ignored build scripts" warnings).
+allowBuilds:
+  sharp: true

@@ -1,0 +1,38 @@
+{
+  "name": "dn-playwright",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "DN_PLAYWRIGHT: คอร์สสอน Playwright พร้อมแอป DN Shop",
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@12.4.1",
+  "scripts": {
+    "app": "node scripts/start-app.mjs",
+    "build": "next build",
+    "start": "next start -p 3100",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:app": "playwright test --config internal/playwright.config.ts",
+    "report": "playwright show-report",
+    "codegen": "playwright codegen http://localhost:3100",
+    "lint": "node scripts/check-thai.mjs && eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "next": "~16.4.6",
+    "react": "~19.3.1",
+    "react-dom": "~19.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "~1.65.0",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^10.14.0",
+    "eslint-plugin-playwright": "~2.12.2",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "~8.72.2"
+  }
+}
