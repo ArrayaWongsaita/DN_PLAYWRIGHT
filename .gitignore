@@ -11,3 +11,5 @@ lessons/45-visual-comparison/**/*-snapshots/
 .superpowers
 docs/superpowers
 *.local.har
+lessons/50-reporters/output/
+lessons/51-ci-github-actions/output/
