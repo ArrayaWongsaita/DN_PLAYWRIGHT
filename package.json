@@ -14,6 +14,7 @@
     "start": "next start -p 3100",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
+    "verify": "node scripts/verify.mjs",
     "test:app": "playwright test --config internal/playwright.config.ts",
     "report": "playwright show-report",
     "codegen": "playwright codegen http://localhost:3100",
