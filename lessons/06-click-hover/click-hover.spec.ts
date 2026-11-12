@@ -107,6 +107,14 @@ test("หน้า /playground/hover hover บริการลูกค้า�
 // แนวทาง: ตรวจ toHaveValue("3") หลังกดเพิ่ม แล้วกด getByRole("button", { name: "ลดจำนวน" }).click()
 //        แล้วตรวจ toHaveValue("2") (ตรวจค่าทุกขั้น จะรู้ว่าพลาดตรงไหน)
 // ------------------------------------------------
-test.fixme("หน้าสินค้า p01 เพิ่มแล้วลดจำนวนต้องได้ค่าที่ถูกต้อง", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 5 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้าสินค้า p01 เพิ่มแล้วลดจำนวนต้องได้ค่าที่ถูกต้อง", async ({ page }) => {
+  await page.goto("/products/p01");
+  const quantity = page.getByRole("textbox", { name: "จำนวน" });
+  await page.getByRole("button", { name: "เพิ่มจำนวน" }).click();
+  await page.getByRole("button", { name: "เพิ่มจำนวน" }).click();
+  // ตรวจค่าหลังกดเพิ่ม เพื่อให้รู้ว่าถ้าพลาดคือพลาดที่ขั้นเพิ่มหรือขั้นลด
+  await expect(quantity).toHaveValue("3");
+  await page.getByRole("button", { name: "ลดจำนวน" }).click();
+  // 3 - 1 = 2 (toHaveValue รอจนค่าอัปเดต ไม่ต้องหน่วงเวลา)
+  await expect(quantity).toHaveValue("2");
 });
