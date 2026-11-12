@@ -18,6 +18,16 @@ async function addFirstProductToCart(page: Page) {
 }
 
 
+// เปิด /checkout พร้อมของในตะกร้า แล้วรอให้หน้าหลักแสดงยอดที่ต้องชำระก่อนไปยุ่งกับ iframe
+// หน้า checkout และฟอร์มบัตรเป็นหน้าที่ต้อง hydrate ก่อนถึงจะตอบสนอง (README หัวข้อ 7) ยอดที่ต้องชำระเป็นแค่เนื้อหาที่ขึ้นแล้ว
+// ช่วยลดความเสี่ยง ไม่การันตี
+async function openCheckout(page: Page) {
+  await addFirstProductToCart(page);
+  await page.goto("/checkout");
+  await expect(page.getByTestId("order-total")).toBeVisible();
+}
+
+
 // ------------------------------------------------
 // ตัวอย่างที่ 1: กล่องแชทช่วยเหลือใน iframe ใช้ page.frameLocator(...)
 // ------------------------------------------------
@@ -28,6 +38,8 @@ test("หน้า iframe: กดเริ่มแชทในกล่อง�
   // ข้างในใช้ getByRole ได้ตามปกติ (เหมือน page) แต่ page.getByRole จะมองไม่เห็นของข้างใน iframe
   const chat = page.frameLocator('iframe[title="กล่องแชทช่วยเหลือ"]');
 
+  // รอให้เนื้อหาใน iframe ขึ้นก่อนกดปุ่ม เพื่อลดความเสี่ยงที่จะกดก่อนหน้า iframe hydrate (ไม่การันตี ดู README หัวข้อ 7)
+  await expect(chat.getByRole("heading", { level: 1, name: "ช่วยเหลือ" })).toBeVisible();
   await chat.getByRole("button", { name: "เริ่มแชท" }).click();
 
   // ข้อความนี้อยู่ใน iframe เช่นกัน ตรวจผ่าน chat ตัวเดิม
@@ -45,23 +57,24 @@ test("หน้า iframe: ใช้ getByTitle กับ contentFrame ได้
   // contentFrame() เปลี่ยน Locator ของ iframe ให้เป็น FrameLocator ที่ใช้หาของข้างในต่อได้
   const chat = page.getByTitle("กล่องแชทช่วยเหลือ").contentFrame();
 
+  await expect(chat.getByRole("heading", { level: 1, name: "ช่วยเหลือ" })).toBeVisible();
   await chat.getByRole("button", { name: "เริ่มแชท" }).click();
   await expect(chat.getByText("เจ้าหน้าที่จะตอบกลับภายใน 5 นาที")).toBeVisible();
 });
 
 
 // ------------------------------------------------
-// ข้อ 1: เหมือนตัวอย่างที่ 1 แต่ตรวจเพิ่มว่าข้างใน iframe มีหัวข้อระดับ 1 "ช่วยเหลือ" ก่อนกดปุ่ม
-// แนวทาง: ใช้ frameLocator เหมือนตัวอย่างที่ 1 แล้ว expect(chat.getByRole("heading", ...)).toBeVisible() ก่อนกด "เริ่มแชท"
+// ข้อ 1: เหมือนตัวอย่างที่ 1 แต่ตรวจข้อความตอบกลับว่ามี 1 รายการ (toHaveCount(1)) แทน toBeVisible
+// แนวทาง: ใช้ frameLocator เหมือนตัวอย่างที่ 1 รอหัวข้อ "ช่วยเหลือ" ก่อน กด "เริ่มแชท" แล้ว expect(chat.getByText("เจ้าหน้าที่จะตอบกลับภายใน 5 นาที")).toHaveCount(1)
 // ------------------------------------------------
-test.fixme("หน้า iframe: เห็นหัวข้อช่วยเหลือในกล่องแชทก่อนกดเริ่มแชท", async ({ page }) => {
+test.fixme("หน้า iframe: หลังกดเริ่มแชทมีข้อความตอบกลับหนึ่งรายการ", async ({ page }) => {
   // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
 });
 
 
 // ------------------------------------------------
 // ข้อ 2: ตรวจว่า "ก่อนกด" ยังไม่มีข้อความตอบกลับ และ "หลังกด" มีข้อความตอบกลับ ใช้ getByTitle(...).contentFrame()
-// แนวทาง: expect(...).toBeHidden() ก่อนกด (ข้อความยังไม่ถูก render จึง hidden) แล้วกด "เริ่มแชท" และ expect(...).toBeVisible()
+// แนวทาง: รอหัวข้อ "ช่วยเหลือ" ใน iframe ก่อน แล้ว expect(...).toBeHidden() (ข้อความยังไม่ถูก render จึง hidden) จากนั้นกด "เริ่มแชท" และ expect(...).toBeVisible()
 // ------------------------------------------------
 test.fixme("หน้า iframe: ข้อความตอบกลับโผล่หลังกดเริ่มแชทเท่านั้น", async ({ page }) => {
   // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
@@ -70,8 +83,9 @@ test.fixme("หน้า iframe: ข้อความตอบกลับโ�
 
 // ------------------------------------------------
 // ข้อ 3: ใส่บัตรที่ไม่ถูกต้องในฟอร์มบัตรเครดิตหน้า /checkout แล้วต้องเห็น "บัตรไม่ถูกต้อง"
-// แนวทาง: เรียก addFirstProductToCart(page) ก่อน แล้ว page.goto("/checkout") (วิธีชำระเงินเริ่มที่ "บัตรเครดิต" จึงมี iframe เลย)
-//        เลือก iframe ด้วย page.frameLocator('iframe[title="ฟอร์มบัตรเครดิต"]') กรอก "หมายเลขบัตร" "1234", "วันหมดอายุ" "12/30", "CVV" "123"
+// แนวทาง: เรียก openCheckout(page) (เตรียมตะกร้า เปิด /checkout และรอยอดที่ต้องชำระ) วิธีชำระเงินเริ่มที่ "บัตรเครดิต" จึงมี iframe เลย
+//        เลือก iframe ด้วย page.frameLocator('iframe[title="ฟอร์มบัตรเครดิต"]') รอให้ปุ่ม "ยืนยันบัตร" ขึ้นใน iframe
+//        กรอก "หมายเลขบัตร" "1234" แล้วตรวจ toHaveValue("1234") กรอก "วันหมดอายุ" "12/30", "CVV" "123"
 //        แล้วกด "ยืนยันบัตร" และตรวจ alert ใน iframe ด้วย getByRole("alert").filter({ hasText: "บัตรไม่ถูกต้อง" })
 //        (ในหน้า iframe ก็มี route announcer ว่างๆ ของ Next.js เหมือนหน้าหลัก จึงต้อง filter ตามข้อความ)
 // ------------------------------------------------
@@ -82,7 +96,7 @@ test.fixme("หน้า checkout: บัตรที่ไม่ถูกต้
 
 // ------------------------------------------------
 // ข้อ 4: ใส่บัตรที่ถูกต้อง (VALID_CARD) แล้วต้องเห็นข้อความทั้งในและนอก iframe
-// แนวทาง: เหมือนข้อ 3 แต่ใช้ getByTitle("ฟอร์มบัตรเครดิต").contentFrame() และกรอก VALID_CARD
+// แนวทาง: เหมือนข้อ 3 (openCheckout, รอปุ่ม, กรอกแล้วตรวจ toHaveValue) แต่ใช้ getByTitle("ฟอร์มบัตรเครดิต").contentFrame() และกรอก VALID_CARD
 //        ใน iframe ต้องเห็น "บัตรผ่านการตรวจสอบ" และหน้าหลัก (ใช้ page ปกติ) ต้องเห็น "ยืนยันบัตรแล้ว"
 // ------------------------------------------------
 test.fixme("หน้า checkout: บัตรที่ถูกต้องยืนยันได้ทั้งใน iframe และหน้าหลัก", async ({ page }) => {

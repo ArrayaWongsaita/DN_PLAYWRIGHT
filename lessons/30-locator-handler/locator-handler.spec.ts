@@ -27,6 +27,8 @@ test("แบนเนอร์คุกกี้: handler ปิดให้ แ
   await expect(page.getByRole("heading", { level: 1, name: "สินค้าทั้งหมด" })).toBeVisible();
 
   await page.getByRole("button", { name: "เพิ่มลงตะกร้า" }).first().click();
+  // ตะกร้าเก็บอยู่ฝั่งเซิร์ฟเวอร์ รอให้ตัวเลขข้างลิงก์ตะกร้าเป็น 1 (เพิ่มสำเร็จ) ก่อนไปหน้าตะกร้า ไม่งั้นอาจไปเห็นตะกร้าว่าง
+  await expect(page.getByTestId("cart-count")).toHaveText("1");
   await page.getByRole("link", { name: /ตะกร้า/ }).click();
 
   await expect(page.getByRole("heading", { level: 1, name: "ตะกร้าสินค้า" })).toBeVisible();
@@ -65,6 +67,8 @@ test.fixme("ไม่มี handler: flow เดียวกับตัวอ�
   // Playwright รอแล้วลองใหม่เรื่อยๆ จนหมดเวลาของ test (Test timeout exceeded) ใน call log จะเห็นว่ามี dialog บังอยู่
   await page.getByRole("link", { name: "ดูสินค้าทั้งหมด" }).click();
   await page.getByRole("button", { name: "เพิ่มลงตะกร้า" }).first().click();
+  // ตะกร้าเก็บอยู่ฝั่งเซิร์ฟเวอร์ รอให้ตัวเลขข้างลิงก์ตะกร้าเป็น 1 (เพิ่มสำเร็จ) ก่อนไปหน้าตะกร้า ไม่งั้นอาจไปเห็นตะกร้าว่าง
+  await expect(page.getByTestId("cart-count")).toHaveText("1");
   await page.getByRole("link", { name: /ตะกร้า/ }).click();
   await expect(page.getByRole("heading", { level: 1, name: "ตะกร้าสินค้า" })).toBeVisible();
 });
@@ -72,7 +76,7 @@ test.fixme("ไม่มี handler: flow เดียวกับตัวอ�
 
 // ------------------------------------------------
 // ข้อ 1: เหมือนตัวอย่างที่ 1 แต่เริ่มที่หน้าสินค้า (/products?cookieBanner=1)
-// แนวทาง: ลงทะเบียน handler ที่กด "ปฏิเสธ" เหมือนตัวอย่างที่ 1 ก่อน goto แล้วเพิ่มสินค้า, ไปตะกร้า, ตรวจว่ามี 1 รายการ
+// แนวทาง: ลงทะเบียน handler ที่กด "ปฏิเสธ" เหมือนตัวอย่างที่ 1 ก่อน goto แล้วเพิ่มสินค้า, รอ cart-count เป็น "1", ไปตะกร้า, ตรวจว่ามี 1 รายการ
 // ------------------------------------------------
 test.fixme("แบนเนอร์คุกกี้: เริ่มจากหน้าสินค้าแล้วไปตะกร้า", async ({ page }) => {
   // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
@@ -93,7 +97,7 @@ test.fixme("แบนเนอร์คุกกี้และโปรโม�
 // ------------------------------------------------
 // ข้อ 3: นับจำนวนครั้งที่ handler ทำงาน (ไม่เกิน 1 ครั้ง)
 // แนวทาง: ลงทะเบียน handler ของแบนเนอร์คุกกี้ที่เพิ่มตัวนับ (let count = 0; ... count++) แล้วกด "ปฏิเสธ"
-//        ทำ flow เหมือนตัวอย่างที่ 1 (goto("/?cookieBanner=1") > ดูสินค้าทั้งหมด > ตะกร้า) จบด้วย expect(count).toBeLessThanOrEqual(1)
+//        ทำ flow เหมือนตัวอย่างที่ 1 (goto("/?cookieBanner=1") > ดูสินค้าทั้งหมด > เพิ่มสินค้า > รอ cart-count เป็น "1" > ตะกร้า) จบด้วย expect(count).toBeLessThanOrEqual(1)
 //        ทำไมไม่ใช่ toBe(1): ถ้า flow เสร็จก่อนแบนเนอร์โผล่ handler จะไม่ทำงานเลย (0 ครั้ง) แต่แบนเนอร์ถูกปิดแล้วไม่โผล่อีก จึงไม่เกิน 1
 //        (อย่ารอแบนเนอร์ด้วย expect(dialog).toBeVisible() เพราะ expect ก็ทำให้ handler ทำงานและปิดแบนเนอร์ก่อน ดู README หัวข้อ 3)
 // ------------------------------------------------
@@ -103,15 +107,14 @@ test.fixme("นับจำนวนครั้งที่ handler ทำง�
 
 
 // ------------------------------------------------
-// ข้อ 4: ถอด handler ออกด้วย page.removeLocatorHandler แล้วแบนเนอร์จะบังการคลิกจริง
-// แนวทาง: เก็บ locator ของ dialog "การใช้คุกกี้" ไว้ในตัวแปร ลงทะเบียน handler ด้วย locator ตัวนั้น แล้วถอดทันทีด้วย
-//        await page.removeLocatorHandler(dialog) (ต้องส่ง locator ตัวเดิมที่ใช้ตอนลงทะเบียน)
-//        goto("/?cookieBanner=1") แล้วรอให้ dialog โผล่ด้วย expect(dialog).toBeVisible() (ตอนนี้ไม่มี handler จึงไม่มีใครปิดให้)
-//        คลิกลิงก์ "ดูสินค้าทั้งหมด" ด้วย { timeout: 2000 } ต้อง reject:
-//        await expect(page.getByRole("link", { name: "ดูสินค้าทั้งหมด" }).click({ timeout: 2000 })).rejects.toThrow()
-//        สุดท้ายกด "ปฏิเสธ" เองแล้วตรวจว่า dialog หาย (toBeHidden)
+// ข้อ 4: handler ทำงานแล้วถอดออกด้วย page.removeLocatorHandler หลังถอดแล้ว handler ต้องไม่ทำงานอีก
+// แนวทาง: goto("/") เก็บ locator ของ h1 "DN Shop" ไว้ในตัวแปร (หัวข้อมองเห็นตลอด ทำให้ handler ทำงานได้แน่นอนไม่สุ่ม)
+//        ลงทะเบียน handler ด้วย locator นั้นที่ทำแค่ count++ ใส่ { noWaitAfter: true } (เพราะหัวข้อไม่หายหลัง handler ดู README หัวข้อ 5)
+//        hover ลิงก์ "หน้าแรก" หนึ่งครั้ง ตรวจ expect(count).toBe(1)
+//        แล้ว await page.removeLocatorHandler(หัวข้อ) (ต้องส่ง locator ตัวเดิมที่ใช้ตอนลงทะเบียน) hover อีกครั้ง ตรวจว่า count ยังเป็น 1
+//        (ส่วนแบนเนอร์ที่บังการคลิกเมื่อไม่มี handler ดูตัวอย่างที่ 3)
 // ------------------------------------------------
-test.fixme("ถอด handler แล้วแบนเนอร์บังการคลิก", async ({ page }) => {
+test.fixme("ถอด handler แล้ว handler ไม่ทำงานอีก", async ({ page }) => {
   // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
 });
 
