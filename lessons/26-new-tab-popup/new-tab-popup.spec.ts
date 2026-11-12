@@ -135,6 +135,7 @@ test("หน้า new-tab: ส่งสองข้อความในแช�
   await expect(box).toHaveValue("ข้อความแรก"); // ถ้าหน้าโหลดใหม่ ข้อความหายและ fail ตรงนี้
   await chat.getByRole("button", { name: "ส่ง", exact: true }).click();
   // ทำไม: หลังส่ง แอปล้างช่องกรอก toHaveValue("") จึงรอจนช่องว่าง (แปลว่าข้อความแรกถูกส่งแล้ว) ก่อนพิมพ์ข้อความที่สอง
+  await expect(box).toHaveValue("");
   await box.fill("ข้อความที่สอง");
   await chat.getByRole("button", { name: "ส่ง", exact: true }).click();
 
