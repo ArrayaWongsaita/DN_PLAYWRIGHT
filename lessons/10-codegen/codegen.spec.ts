@@ -64,8 +64,17 @@ test("[โค้ดหลังเกลา] ค้นหาหูฟังแ�
 //         → กดปุ่ม "Assert text" ของ codegen คลิกที่ข้อความ "พบสินค้า 3 รายการ" → copy โค้ดมาวางด้านล่าง
 // เกลา: เปลี่ยน URL เป็นแบบสั้น และตรวจให้ครบ: เห็นข้อความ "พบสินค้า 3 รายการ" และเห็นลิงก์ "หนังสือ Playwright ฉบับลงมือทำ"
 // ------------------------------------------------
-test.fixme("[codegen] เลือกหมวดหนังสือแล้วต้องพบสินค้า 3 รายการ", async ({ page }) => {
-  // 👉 วางโค้ดที่อัดได้ตรงนี้ แล้วเกลา แล้วเปลี่ยน test.fixme เป็น test
+test("[codegen] เลือกหมวดหนังสือแล้วต้องพบสินค้า 3 รายการ", async ({ page }) => {
+  // --- โค้ดดิบที่ codegen ให้ (เก็บไว้ในคอมเมนต์เพื่อเทียบ) ---
+  // await page.goto('http://localhost:3100/products');
+  // await page.getByLabel('หมวดหมู่').selectOption('books');
+  // --- โค้ดหลังเกลา ---
+  await page.goto("/products");
+  // ทำไมเปลี่ยนเป็น getByRole("combobox"): ตรงกับสิ่งที่ผู้ใช้เห็น (select ที่มีชื่อ "หมวดหมู่") และสม่ำเสมอกับ locator อื่นในบท 08
+  await page.getByRole("combobox", { name: "หมวดหมู่" }).selectOption({ label: "หนังสือ" });
+  // ทำไมต้องเพิ่ม expect: โค้ดดิบไม่ตรวจอะไร ที่เติมคือผลที่ผู้ใช้ควรเห็น (หนังสือมี 3 เล่ม)
+  await expect(page.getByText("พบสินค้า 3 รายการ")).toBeVisible();
+  await expect(page.getByRole("link", { name: "หนังสือ Playwright ฉบับลงมือทำ" })).toBeVisible();
 });
 
 
@@ -76,8 +85,25 @@ test.fixme("[codegen] เลือกหมวดหนังสือแล้�
 //      และลิงก์ "ตะกร้า (3)" ปรากฏ
 //      (ถ้า codegen ให้ getByRole('spinbutton') หรือ locator แปลกๆ ตรวจว่าชื่อตรงกับที่เรียนในบท 06)
 // ------------------------------------------------
-test.fixme("[codegen] เพิ่มจำนวนเสื้อยืด 2 ครั้งแล้วเพิ่มลงตะกร้า", async ({ page }) => {
-  // 👉 วางโค้ดที่อัดได้ตรงนี้ แล้วเกลา แล้วเปลี่ยน test.fixme เป็น test
+test("[codegen] เพิ่มจำนวนเสื้อยืด 2 ครั้งแล้วเพิ่มลงตะกร้า", async ({ page }) => {
+  // --- โค้ดดิบที่ codegen ให้ ---
+  // await page.goto('http://localhost:3100/products/p04');
+  // await page.getByRole('button', { name: 'เพิ่มจำนวน' }).click();
+  // await page.getByRole('button', { name: 'เพิ่มจำนวน' }).click();
+  // await page.getByRole('button', { name: 'เพิ่มลงตะกร้า' }).click();
+  // --- โค้ดหลังเกลา ---
+  await page.goto("/products/p04");
+  // ทำไมเก็บเป็นตัวแปร: โค้ดดิบเรียก locator เดิมซ้ำสองบรรทัด
+  const increase = page.getByRole("button", { name: "เพิ่มจำนวน" });
+  await increase.click();
+  await increase.click();
+  // เริ่มที่ 1 กดเพิ่ม 2 ครั้ง ต้องเป็น 3 (ตรวจ value ไม่ใช่ text)
+  await expect(page.getByRole("textbox", { name: "จำนวน" })).toHaveValue("3");
+
+  await page.getByRole("button", { name: "เพิ่มลงตะกร้า" }).click();
+  // ทำไมตรวจสองที่: ข้อความยืนยันบอกว่าแอปรับคำสั่ง ส่วนตัวเลขที่ header บอกว่าของเข้าตะกร้าจริง 3 ชิ้น
+  await expect(page.getByRole("status").filter({ hasText: "เพิ่มลงตะกร้าแล้ว" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "ตะกร้า (3)" })).toBeVisible();
 });
 
 
@@ -87,6 +113,15 @@ test.fixme("[codegen] เพิ่มจำนวนเสื้อยืด 2 �
 // เกลา: ตรวจข้อความ "กรุณากรอกชื่อ" และ "กรุณายอมรับเงื่อนไขการใช้งาน" ให้ครบทั้งสอง
 //      และลบบรรทัดที่ codegen ใส่เกินมา (เช่น click ซ้ำ) ออก
 // ------------------------------------------------
-test.fixme("[codegen] สมัครสมาชิกโดยไม่กรอกข้อมูลต้องมีข้อความ error", async ({ page }) => {
-  // 👉 วางโค้ดที่อัดได้ตรงนี้ แล้วเกลา แล้วเปลี่ยน test.fixme เป็น test
+test("[codegen] สมัครสมาชิกโดยไม่กรอกข้อมูลต้องมีข้อความ error", async ({ page }) => {
+  // --- โค้ดดิบที่ codegen ให้ ---
+  // await page.goto('http://localhost:3100/register');
+  // await page.getByRole('button', { name: 'สมัครสมาชิก' }).click();
+  // await expect(page.getByText('กรุณากรอกชื่อ')).toBeVisible();
+  // --- โค้ดหลังเกลา ---
+  await page.goto("/register");
+  await page.getByRole("button", { name: "สมัครสมาชิก" }).click();
+  // ทำไมตรวจสองข้อความ: โค้ดดิบตรวจแค่ข้อความแรกที่คลิกไป ฟอร์มนี้แจ้ง error หลายช่องพร้อมกัน
+  await expect(page.getByText("กรุณากรอกชื่อ")).toBeVisible();
+  await expect(page.getByText("กรุณายอมรับเงื่อนไขการใช้งาน")).toBeVisible();
 });

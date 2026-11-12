@@ -37,8 +37,14 @@ test("หน้าสินค้า p01 hover ข้อมูลการจั
 // แนวทาง: เหมือนตัวอย่างที่ 1 แต่เรียก click() สองบรรทัดติดกัน
 //        (ช่องจำนวนเริ่มที่ 1 ดังนั้นกดสองครั้งต้องได้ 3)
 // ------------------------------------------------
-test.fixme("หน้าสินค้า p01 กดเพิ่มจำนวน 2 ครั้งแล้วต้องเป็น 3", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้าสินค้า p01 กดเพิ่มจำนวน 2 ครั้งแล้วต้องเป็น 3", async ({ page }) => {
+  await page.goto("/products/p01");
+  const increase = page.getByRole("button", { name: "เพิ่มจำนวน" });
+  // ทำไมคลิกสองบรรทัด: แต่ละ click รอจนปุ่มพร้อมและกดเสร็จก่อนค่อยไปบรรทัดถัดไป จึงไม่ต้องรอเอง
+  await increase.click();
+  await increase.click();
+  // ทำไม toHaveValue("3"): ช่องจำนวนเป็น <input> ค่าอยู่ใน value ไม่ใช่ข้อความ (และเป็น string เสมอ)
+  await expect(page.getByRole("textbox", { name: "จำนวน" })).toHaveValue("3");
 });
 
 
@@ -48,8 +54,15 @@ test.fixme("หน้าสินค้า p01 กดเพิ่มจำนว
 //        ตรวจด้วย toBeDisabled() ก่อน แล้วกด "เพิ่มจำนวน" แล้วตรวจด้วย toBeEnabled()
 //        (ปุ่ม disabled คือปุ่มที่กดไม่ได้ ผู้ใช้เห็นเป็นสีจาง)
 // ------------------------------------------------
-test.fixme("หน้าสินค้า p01 ปุ่มลดจำนวนต้องกดไม่ได้ตอนจำนวนเป็น 1", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้าสินค้า p01 ปุ่มลดจำนวนต้องกดไม่ได้ตอนจำนวนเป็น 1", async ({ page }) => {
+  await page.goto("/products/p01");
+  // เก็บ locator ไว้ในตัวแปรเพราะใช้สองครั้ง locator ไม่ได้เก็บผล มันหา element ใหม่ทุกครั้งที่ใช้
+  const decrease = page.getByRole("button", { name: "ลดจำนวน" });
+  // ทำไม toBeDisabled: จำนวนเริ่มที่ 1 แอปจึงกดลดไม่ได้ ตรวจที่ปุ่มตรงๆ เท่ากับตรวจกติกาของหน้า
+  await expect(decrease).toBeDisabled();
+  await page.getByRole("button", { name: "เพิ่มจำนวน" }).click();
+  // หลังเพิ่มเป็น 2 ปุ่มลดต้องกลับมากดได้ (expect รอจนสถานะเปลี่ยน จึงไม่ต้อง sleep)
+  await expect(decrease).toBeEnabled();
 });
 
 
@@ -59,8 +72,15 @@ test.fixme("หน้าสินค้า p01 ปุ่มลดจำนวน
 //        หารูปด้วย getByAltText("หูฟังไร้สาย DN Buds") แล้วเรียก dblclick()
 //        แล้วตรวจข้อความใหม่ด้วย getByText
 // ------------------------------------------------
-test.fixme("หน้าสินค้า p01 ดับเบิลคลิกรูปแล้วข้อความใต้รูปต้องเปลี่ยน", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้าสินค้า p01 ดับเบิลคลิกรูปแล้วข้อความใต้รูปต้องเปลี่ยน", async ({ page }) => {
+  await page.goto("/products/p01");
+  // ตรวจสถานะก่อนทำ เพื่อให้รู้ว่าที่เปลี่ยนเป็นผลของ dblclick จริง ไม่ใช่ค่าเริ่มต้นอยู่แล้ว
+  await expect(page.getByText("ดับเบิลคลิกเพื่อขยายรูป")).toBeVisible();
+  // ทำไมใช้ dblclick ไม่ใช่ click สองครั้ง: โค้ดของหน้าฟัง event dblclick ซึ่ง click() สองครั้งไม่ได้ยิง
+  await page.getByAltText("หูฟังไร้สาย DN Buds").dblclick();
+  await expect(page.getByText("ดับเบิลคลิกเพื่อย่อรูป")).toBeVisible();
+  // ข้อความเก่าต้องหายไปด้วย
+  await expect(page.getByText("ดับเบิลคลิกเพื่อขยายรูป")).not.toBeVisible();
 });
 
 
@@ -69,6 +89,14 @@ test.fixme("หน้าสินค้า p01 ดับเบิลคลิก
 // แนวทาง: ก่อน hover เมนูยังซ่อนอยู่ ลองตรวจ not.toBeVisible() ของลิงก์ "ติดตามพัสดุ" ก่อน
 //        แล้ว hover() ปุ่มแล้วตรวจว่าลิงก์ทั้งสองมองเห็น (getByRole("link", ...))
 // ------------------------------------------------
-test.fixme("หน้า /playground/hover hover บริการลูกค้าแล้วต้องเห็นเมนู", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /playground/hover hover บริการลูกค้าแล้วต้องเห็นเมนู", async ({ page }) => {
+  await page.goto("/playground/hover");
+  const trackLink = page.getByRole("link", { name: "ติดตามพัสดุ" });
+  const returnLink = page.getByRole("link", { name: "คืนสินค้า" });
+  // ก่อน hover เมนูซ่อนอยู่ ตรวจไว้เพื่อยืนยันว่า hover เป็นตัวทำให้เมนูโผล่
+  await expect(trackLink).not.toBeVisible();
+  await page.getByRole("button", { name: "บริการลูกค้า" }).hover();
+  // ทำไมใช้ toBeVisible: expect รอจนเมนูแสดง (อาจมี animation) ไม่ต้องหน่วงเวลาเอง
+  await expect(trackLink).toBeVisible();
+  await expect(returnLink).toBeVisible();
 });
