@@ -11,19 +11,22 @@ import { test, expect } from "@playwright/test";
 
 
 // ------------------------------------------------
-// ตัวอย่างที่ 1: "โค้ดดิบจาก codegen" (รูปแบบเดียวกับที่ codegen ให้มา ยังไม่ได้เกลา)
+// ตัวอย่างที่ 1: "โค้ดดิบจาก codegen" (ตัวอย่างตัวแทนของสิ่งที่ codegen ให้มา ยังไม่ได้เกลา)
 // เรื่องที่อัด: เปิดหน้าแรก → ไปหน้าสินค้า → ค้นหาหูฟัง → เปิดหน้าสินค้า → เพิ่มลงตะกร้า
-// ข้อสังเกต: ไม่มี expect เลย, URL ยาวเต็ม, ใช้ getByPlaceholder/getByText ทั้งที่มี getByRole ที่ดีกว่า
+// หมายเหตุ: เขียนตามรูปแบบที่ codegen ให้ (locator เป็น getByRole เป็นหลัก, ใช้ ' เดี่ยว, goto ด้วย URL เต็ม)
+//          แต่เป็นตัวอย่างตัวแทน ไม่ได้คัดลอกจากการอัดจริง ของจริงอาจต่างเล็กน้อยตามเวอร์ชันและจังหวะที่กด
+// ข้อสังเกต: ไม่มี expect เลย, URL ยาวเต็ม, click ช่องค้นหาซ้ำก่อน fill, เรียก locator เดิมซ้ำหลายบรรทัด
+//           (ชื่อ "สินค้า" ซ้ำกับลิงก์อื่น codegen จึงใส่ exact: true ให้)
 //           ถ้าหน้าเว็บพังแต่ปุ่มยังกดได้ test นี้ก็ยังผ่าน (จึงยังไม่น่าไว้ใจ)
 // ------------------------------------------------
 test("[โค้ดดิบจาก codegen] ค้นหาหูฟังแล้วเพิ่มลงตะกร้า", async ({ page }) => {
-  await page.goto("http://localhost:3100/");
-  await page.getByRole("link", { name: "สินค้า", exact: true }).click();
-  await page.getByPlaceholder("พิมพ์ชื่อสินค้า แล้วกด Enter").click();
-  await page.getByPlaceholder("พิมพ์ชื่อสินค้า แล้วกด Enter").fill("หูฟัง");
-  await page.getByPlaceholder("พิมพ์ชื่อสินค้า แล้วกด Enter").press("Enter");
-  await page.getByText("หูฟังไร้สาย DN Buds").click();
-  await page.getByRole("button", { name: "เพิ่มลงตะกร้า" }).click();
+  await page.goto('http://localhost:3100/');
+  await page.getByRole('link', { name: 'สินค้า', exact: true }).click();
+  await page.getByRole('searchbox', { name: 'ค้นหาสินค้า' }).click();
+  await page.getByRole('searchbox', { name: 'ค้นหาสินค้า' }).fill('หูฟัง');
+  await page.getByRole('searchbox', { name: 'ค้นหาสินค้า' }).press('Enter');
+  await page.getByRole('link', { name: 'หูฟังไร้สาย DN Buds' }).click();
+  await page.getByRole('button', { name: 'เพิ่มลงตะกร้า' }).click();
 });
 
 
@@ -32,9 +35,9 @@ test("[โค้ดดิบจาก codegen] ค้นหาหูฟังแ
 // สิ่งที่เปลี่ยน (ไล่ดูทีละบรรทัดเทียบกับตัวอย่างที่ 1):
 //   1. goto ใช้ "/" สั้นๆ (baseURL อยู่ใน config แล้ว)
 //   2. ลิงก์ "สินค้า" ในเมนู ระบุผ่าน navigation "เมนูหลัก" ให้ชัด
-//   3. ช่องค้นหา: เปลี่ยน getByPlaceholder เป็น getByRole("searchbox") แล้วเก็บใส่ตัวแปร
+//   3. ช่องค้นหา: เก็บ locator ใส่ตัวแปรแทนการเขียนซ้ำสามบรรทัด
 //      และตัด click() ที่เกินออก (fill คลิกให้เองอยู่แล้ว)
-//   4. ชื่อสินค้า: เปลี่ยน getByText เป็น getByRole("link") ให้ตรงกับสิ่งที่ผู้ใช้กดจริง
+//   4. เพิ่ม toHaveURL หลังเปลี่ยนหน้า เพื่อยืนยันว่าไปถึงหน้าที่ถูกต้อง
 //   5. เพิ่ม expect หลังแต่ละขั้นที่สำคัญ เพื่อให้รู้ว่า "สำเร็จจริง" ไม่ใช่แค่กดผ่าน
 // ------------------------------------------------
 test("[โค้ดหลังเกลา] ค้นหาหูฟังแล้วเพิ่มลงตะกร้า", async ({ page }) => {

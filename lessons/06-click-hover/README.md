@@ -77,7 +77,7 @@ await expect(page.getByRole("button", { name: "ลดจำนวน" })).toBeEn
 pnpm test 06-click-hover
 ```
 
-ผลที่ควรได้ก่อนเริ่มทำแบบฝึกหัด: `2 passed` และ `4 skipped`
+ผลที่ควรได้ก่อนเริ่มทำแบบฝึกหัด: `2 passed` และ `5 skipped`
 
 ## แบบฝึกหัดในบทนี้
 
@@ -85,6 +85,7 @@ pnpm test 06-click-hover
 2. ปุ่ม "ลดจำนวน" ต้อง disabled ตอนเป็น 1 และ enabled หลังกดเพิ่ม
 3. ดับเบิลคลิกรูปสินค้าแล้วข้อความใต้รูปต้องเปลี่ยน
 4. hover "บริการลูกค้า" ที่ `/playground/hover` แล้วต้องเห็นเมนู
+5. เพิ่มแล้วลดจำนวน ตรวจค่าด้วย `toHaveValue` ทุกขั้น
 
 ## อ่านเพิ่ม
 

@@ -46,7 +46,7 @@ pnpm codegen
 1. **หน้าต่าง browser**: ใช้งานเว็บตามปกติ ทุกการกระทำจะถูกอัด
 2. **หน้าต่าง Playwright Inspector**: แสดงโค้ดที่อัดได้ มีปุ่ม Copy และปุ่ม Record (จุดแดง) เริ่ม/หยุดอัด
 
-ถ้าเปิดไม่ขึ้นหรือขึ้น error `ECONNREFUSED` แสดงว่าแอปใน terminal ที่ 1 ยังไม่ทำงาน
+ถ้าหน้าเว็บในหน้าต่าง browser ของ codegen ขึ้นข้อความอย่าง `ERR_CONNECTION_REFUSED` (เข้าเว็บไม่ได้) แสดงว่าแอปใน terminal ที่ 1 ยังไม่ทำงาน
 
 เมื่อเสร็จ ปิดหน้าต่าง browser แล้วกด `Ctrl + C` ใน terminal ทั้งสองเพื่อหยุด (ทั้ง Mac และ Windows)
 
@@ -72,15 +72,15 @@ codegen เก่งเรื่องจับ "สิ่งที่กด" �
 |---|---|
 | ไม่มี `expect` เลย (test ไม่ได้ตรวจอะไร) | เพิ่ม `expect` หลังขั้นสำคัญ หรือใช้ปุ่ม assert ตอนอัด |
 | `goto("http://localhost:3100/...")` | เปลี่ยนเป็น `goto("/...")` (baseURL อยู่ใน config แล้ว) |
-| `click()` ซ้ำก่อน `fill()` | ลบ `click()` ออก เพราะ `fill` ทำให้เองอยู่แล้ว |
-| `getByText(...)` / `getByPlaceholder(...)` ทั้งที่มี role ที่ดีกว่า | เปลี่ยนเป็น `getByRole(...)` (บท 04) |
+| `click()` ที่ช่องก่อน `fill()` (codegen อัดทั้งสองการกระทำ) | ลบ `click()` ออก เพราะ `fill` ทำให้เองอยู่แล้ว |
+| `getByText(...)` / `getByPlaceholder(...)` / `getByLabel(...)` ทั้งที่มี role ที่ดีกว่า (codegen เลือกตัวที่มันคิดว่าเหมาะ ซึ่งบางครั้งไม่ใช่ตัวที่ดีที่สุด) | เปลี่ยนเป็น `getByRole(...)` (บท 04) |
 | ใช้ locator ยาว เช่น `.locator('div').filter(...)` | หา role หรือ label ที่ตรงกว่า |
 | เรียก locator ตัวเดิมซ้ำหลายบรรทัด | เก็บใส่ตัวแปร เช่น `const searchBox = ...` |
 | ใช้ `.first()`/`.nth()` ทั้งที่ระบุให้ชัดได้ | ระบุจากชื่อหรือ landmark ให้ชัด |
 
 ตัวอย่างในไฟล์ `codegen.spec.ts` มีทั้ง **"โค้ดดิบจาก codegen"** และ **"โค้ดหลังเกลา"** ของเรื่องเดียวกัน ให้เปรียบเทียบทีละบรรทัด ทั้งสองผ่านทั้งคู่ แต่ตัวแรกไม่ได้ตรวจว่าสำเร็จจริง
 
-> หมายเหตุ: โค้ดที่ codegen ให้อาจต่างจากในตัวอย่างเล็กน้อยตามเวอร์ชันและตามจังหวะที่คุณกด (เช่นใช้ `'` เดี่ยวแทน `"` คู่) เป็นเรื่องปกติ หลักการเกลายังเหมือนกัน
+> หมายเหตุ: "โค้ดดิบ" ในไฟล์เป็น **ตัวอย่างตัวแทน** เขียนตามรูปแบบที่ codegen ให้ (ใช้ `'` เดี่ยว, `getByRole` เป็นหลัก, `goto` ด้วย URL เต็ม) ไม่ได้คัดลอกจากการอัดจริง โค้ดที่คุณอัดได้อาจต่างออกไป เช่น เลือก `getByLabel` / `getByText` แทน `getByRole` ใส่ `exact: true` หรือเรียงบรรทัดต่างกันตามเวอร์ชันและจังหวะที่คุณกด เป็นเรื่องปกติ หลักการเกลายังเหมือนกัน
 
 ## จุดที่มักพลาด
 
@@ -118,5 +118,5 @@ pnpm test 10-codegen
 ## อ่านเพิ่ม
 
 - [Generating tests (codegen)](https://playwright.dev/docs/codegen)
-- [Generate tests with the Playwright Inspector](https://playwright.dev/docs/codegen#generating-locators)
+- [Codegen: Generating locators](https://playwright.dev/docs/codegen#generating-locators)
 - [Best Practices](https://playwright.dev/docs/best-practices)
