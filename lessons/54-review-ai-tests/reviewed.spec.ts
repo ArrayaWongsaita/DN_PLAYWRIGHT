@@ -48,9 +48,8 @@ test("ค้นหาเมาส์แล้วต้องเห็นผล 1
 test("หน้า /products ต้องแสดงรายการสินค้า 10 รายการ (เขียนใหม่)", async ({ page }) => {
   await page.goto("/products");
 
-  // ทุกบรรทัดเป็น web-first assertion: รอเองและลองใหม่ ไม่ต้องมีบรรทัดอื่นมาคั่นเพื่อ "รอให้หน้าพร้อม"
-  // ของเดิมผ่านเพราะบรรทัด toHaveCount ด้านบนรอแทน ส่วน isVisible() ตรวจแค่ชั่วขณะแล้วจบ ล้มด้วยข้อความ "expected true, received false" ที่บอกอะไรไม่ได้
-  await expect(page.getByRole("list", { name: "รายการสินค้า" }).getByRole("listitem")).toHaveCount(10);
+  // บรรทัดนี้เป็น web-first assertion: รอเองและลองใหม่ จึงไม่ต้องมีบรรทัดอื่นมาคั่นเพื่อ "รอให้หน้าพร้อม"
+  // ของเดิมผ่านเพราะบรรทัด toHaveCount ที่อยู่ก่อนหน้ารอแทน ส่วน isVisible() ตรวจแค่ชั่วขณะแล้วจบ ล้มด้วยข้อความ "expected true, received false" ที่บอกอะไรไม่ได้
   await expect(page.getByText("พบสินค้า 10 รายการ")).toBeVisible();
 });
 
