@@ -47,8 +47,13 @@ test("cartPage จาก fixture ใช้โค้ด DN10 กับตะก�
 // ข้อ 1: login เป็นผู้ดูแลระบบด้วย loginPage
 // แนวทาง: เหมือนตัวอย่างที่ 1 แต่ใช้ admin@dnshop.test / admin123 ตรวจว่า "สิทธิ์: ผู้ดูแลระบบ" ขึ้นบนหน้า /account
 // ------------------------------------------------
-test.fixme("loginPage login เป็นผู้ดูแลระบบ", async ({ page, loginPage }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("loginPage login เป็นผู้ดูแลระบบ", async ({ page, loginPage }) => {
+  // เหมือนตัวอย่างที่ 1 แค่เปลี่ยนบัญชี: login(email, password) รับค่าเป็น parameter จึงไม่ต้องแก้ Page Object
+  await loginPage.goto();
+  await loginPage.login("admin@dnshop.test", "admin123");
+
+  await expect(page).toHaveURL("/account");
+  await expect(page.getByText("สิทธิ์: ผู้ดูแลระบบ")).toBeVisible();
 });
 
 
@@ -58,8 +63,17 @@ test.fixme("loginPage login เป็นผู้ดูแลระบบ", asyn
 //        (method increase ใน pages/CartPage.ts เขียนไว้ให้แล้ว และรอให้จำนวนเพิ่มก่อนจบ จึงเรียกติดกันได้ อ่านเหตุผลในไฟล์นั้น)
 //        ตรวจ cartPage.subtotal เป็น "1,770 บาท" (590 x 3)
 // ------------------------------------------------
-test.fixme("cartPage เพิ่มจำนวนสินค้า", async ({ page, cartPage }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("cartPage เพิ่มจำนวนสินค้า", async ({ page, cartPage }) => {
+  const add = await page.request.post("/api/cart", { data: { productId: "p03", quantity: 1 } });
+  expect(add.status()).toBe(201);
+
+  await cartPage.goto();
+  // เรียกติดกันได้เพราะ increase() รอให้จำนวนเพิ่มจริงก่อนจบ (ดูเหตุผลใน pages/CartPage.ts)
+  await cartPage.increase("เมาส์ไร้สาย");
+  await cartPage.increase("เมาส์ไร้สาย");
+
+  // 590 x 3 = 1,770
+  await expect(cartPage.subtotal).toHaveText("1,770 บาท");
 });
 
 
@@ -69,8 +83,18 @@ test.fixme("cartPage เพิ่มจำนวนสินค้า", async ({
 //        ใน test: เตรียมแก้วกาแฟ p06 จำนวน 1 ด้วย API, checkoutPage.goto(), fillRecipient("สมชาย ใจดี", "99 ถนนสุขุมวิท กรุงเทพฯ", "0812345678")
 //        ตรวจว่าช่องชื่อมีค่า "สมชาย ใจดี" (toHaveValue) และ checkoutPage.orderTotal เป็น "240 บาท" (190 + ส่งธรรมดา 50)
 // ------------------------------------------------
-test.fixme("checkoutPage กรอกข้อมูลผู้รับ", async ({ page, checkoutPage }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("checkoutPage กรอกข้อมูลผู้รับ", async ({ page, checkoutPage }) => {
+  // เตรียมตะกร้าก่อนเปิด /checkout ถ้าตะกร้าว่างแอปจะส่งกลับ /cart
+  const add = await page.request.post("/api/cart", { data: { productId: "p06", quantity: 1 } });
+  expect(add.status()).toBe(201);
+
+  await checkoutPage.goto();
+  await checkoutPage.fillRecipient("สมชาย ใจดี", "99 ถนนสุขุมวิท กรุงเทพฯ", "0812345678");
+
+  await expect(checkoutPage.nameInput).toHaveValue("สมชาย ใจดี");
+  await expect(checkoutPage.phoneInput).toHaveValue("0812345678");
+  // 190 + ค่าส่งธรรมดา 50 = 240 (ตัวเลือกเริ่มต้นคือส่งธรรมดา)
+  await expect(checkoutPage.orderTotal).toHaveText("240 บาท");
 });
 
 
@@ -80,8 +104,18 @@ test.fixme("checkoutPage กรอกข้อมูลผู้รับ", asyn
 //        แล้วกด submitButton เตรียมตะกร้าเหมือนข้อ 3, fillRecipient แล้ว placeOrderWith("cod")
 //        ตรวจ URL เป็น /orders/DN-0001 (หมายเลขคำสั่งซื้อแรกของ session นี้) และ heading "สั่งซื้อสำเร็จ"
 // ------------------------------------------------
-test.fixme("checkoutPage สั่งซื้อแบบเก็บเงินปลายทาง", async ({ page, checkoutPage }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("checkoutPage สั่งซื้อแบบเก็บเงินปลายทาง", async ({ page, checkoutPage }) => {
+  await page.request.post("/api/cart", { data: { productId: "p06", quantity: 1 } });
+
+  await checkoutPage.goto();
+  await checkoutPage.fillRecipient("สมชาย ใจดี", "99 ถนนสุขุมวิท กรุงเทพฯ", "0812345678");
+  // ใช้ cod เพราะ card ต้องยืนยันบัตรใน iframe (บท 29) ซึ่งไม่ใช่เป้าหมายของข้อนี้
+  await checkoutPage.placeOrderWith("cod");
+
+  // หมายเลขแรกของ session ใหม่คือ DN-0001 (หมายเลขแยกตาม session และ test นี้มี session เป็นของตัวเอง)
+  await expect(page).toHaveURL("/orders/DN-0001");
+  await expect(page.getByRole("heading", { name: "สั่งซื้อสำเร็จ" })).toBeVisible();
+  await expect(page.getByText("ยอดสุทธิ")).toContainText("240 บาท");
 });
 
 
@@ -91,6 +125,18 @@ test.fixme("checkoutPage สั่งซื้อแบบเก็บเงิ�
 //        เตรียมเมาส์จำนวน 2 ด้วย API แล้ว cartPage.goto() ตรวจ cartPage.subtotal
 //        ค่าที่คาดหวังคำนวณจาก item.price * 2 แล้วจัดรูปแบบด้วย `${(item.price * 2).toLocaleString("en-US")} บาท` (ต้องได้ "1,180 บาท")
 // ------------------------------------------------
-test.fixme("ใช้ catalog คำนวณยอดรวมที่คาดหวัง", async ({ page, cartPage, catalog }) => {
-  // 👉 เขียน test ของข้อ 5 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("ใช้ catalog คำนวณยอดรวมที่คาดหวัง", async ({ page, cartPage, catalog }) => {
+  // catalog ถูกโหลดครั้งเดียวต่อ worker (ไม่เสียเวลาดึงใหม่ในทุก test) และเป็นข้อมูลอ่านอย่างเดียว
+  const mouse = catalog.find((p) => p.id === "p03");
+  // find อาจคืน undefined: ตรวจให้ชัดก่อน แล้วค่อยใช้ (ถ้าไม่เจอ test จะ fail ที่บรรทัดนี้ ไม่ใช่ error ประหลาดทีหลัง)
+  expect(mouse).toBeDefined();
+  const price = mouse!.price;
+
+  const add = await page.request.post("/api/cart", { data: { productId: "p03", quantity: 2 } });
+  expect(add.status()).toBe(201);
+
+  await cartPage.goto();
+  // ค่าที่คาดหวังมาจากข้อมูลจริงของแอป ไม่ได้พิมพ์ตัวเลขตายตัวใน test (590 x 2 = 1,180)
+  // toLocaleString("en-US") ใส่เครื่องหมายคั่นหลักพันเป็นจุลภาค ตรงกับรูปแบบที่หน้าเว็บแสดง
+  await expect(cartPage.subtotal).toHaveText(`${(price * 2).toLocaleString("en-US")} บาท`);
 });

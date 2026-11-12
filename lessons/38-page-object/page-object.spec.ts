@@ -51,8 +51,14 @@ test("login ด้วยรหัสผ่านผิดแล้วเห็�
 // แนวทาง: เหมือนตัวอย่างที่ 1 แต่ใช้ admin@dnshop.test / admin123
 //        ตรวจว่า URL เป็น /account และ "สิทธิ์: ผู้ดูแลระบบ" ขึ้นบนหน้า
 // ------------------------------------------------
-test.fixme("login เป็นผู้ดูแลระบบด้วย LoginPage", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("login เป็นผู้ดูแลระบบด้วย LoginPage", async ({ page }) => {
+  // เหตุผลที่ข้อนี้ไม่ต้องแก้ LoginPage เลย: login(email, password) รับค่าเป็น parameter จึงใช้กับบัญชีไหนก็ได้
+  const loginPage = new LoginPage(page);
+  await loginPage.goto();
+  await loginPage.login("admin@dnshop.test", "admin123");
+
+  await expect(page).toHaveURL("/account");
+  await expect(page.getByText("สิทธิ์: ผู้ดูแลระบบ")).toBeVisible();
 });
 
 
@@ -62,8 +68,17 @@ test.fixme("login เป็นผู้ดูแลระบบด้วย Logi
 //        ใน test: เตรียมตะกร้าด้วย page.request.post("/api/cart", { data: { productId: "p01", quantity: 2 } }) (บท 37)
 //        แล้ว cartPage.goto() ตรวจ cartPage.items มี 1 รายการ และ cartPage.subtotal เป็น "2,580 บาท"
 // ------------------------------------------------
-test.fixme("CartPage.goto() เปิดตะกร้าที่เตรียมด้วย API", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("CartPage.goto() เปิดตะกร้าที่เตรียมด้วย API", async ({ page }) => {
+  // เตรียมด้วย API ก่อน goto เสมอ เพราะหน้า /cart อ่านตะกร้าตอนโหลดหน้า (บท 37)
+  const add = await page.request.post("/api/cart", { data: { productId: "p01", quantity: 2 } });
+  expect(add.status()).toBe(201);
+
+  const cartPage = new CartPage(page);
+  await cartPage.goto();
+
+  // test ใช้ locator จาก Page Object (items, subtotal) ไม่ต้องเขียน getByRole/getByTestId เอง
+  await expect(cartPage.items).toHaveCount(1);
+  await expect(cartPage.subtotal).toHaveText("2,580 บาท");
 });
 
 
@@ -73,8 +88,17 @@ test.fixme("CartPage.goto() เปิดตะกร้าที่เตรี�
 //        ใน test: เตรียมตะกร้าหูฟัง p01 จำนวน 1 ด้วย API, goto(), applyCoupon("DN10")
 //        ตรวจ cartPage.discount เป็น "129 บาท" และ cartPage.total เป็น "1,161 บาท"
 // ------------------------------------------------
-test.fixme("CartPage.applyCoupon() ใช้โค้ด DN10", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("CartPage.applyCoupon() ใช้โค้ด DN10", async ({ page }) => {
+  await page.request.post("/api/cart", { data: { productId: "p01", quantity: 1 } });
+
+  const cartPage = new CartPage(page);
+  await cartPage.goto();
+  await cartPage.applyCoupon("DN10");
+
+  // ผลที่ตรวจอยู่ใน test: ลด 10% ของ 1,290 = 129 และยอดสุทธิ 1,290 - 129 = 1,161
+  // expect รอจนค่าอัปเดต (retry) จึงไม่ต้องรอเองหลังกดปุ่ม
+  await expect(cartPage.discount).toHaveText("129 บาท");
+  await expect(cartPage.total).toHaveText("1,161 บาท");
 });
 
 
@@ -85,8 +109,19 @@ test.fixme("CartPage.applyCoupon() ใช้โค้ด DN10", async ({ page })
 //        ใน test: เตรียมเมาส์ p03 กับแก้วกาแฟ p06 อย่างละ 1 ชิ้น goto(), remove("แก้วกาแฟเซรามิก")
 //        ตรวจว่า cartPage.items เหลือ 1 รายการ และมีข้อความ "เมาส์ไร้สาย"
 // ------------------------------------------------
-test.fixme("CartPage.remove() ลบสินค้าออกจากตะกร้า", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("CartPage.remove() ลบสินค้าออกจากตะกร้า", async ({ page }) => {
+  await page.request.post("/api/cart", { data: { productId: "p03", quantity: 1 } });
+  await page.request.post("/api/cart", { data: { productId: "p06", quantity: 1 } });
+
+  const cartPage = new CartPage(page);
+  await cartPage.goto();
+  await expect(cartPage.items).toHaveCount(2);
+
+  // เรื่อง dialog ถูกซ่อนไว้ใน remove() แล้ว test จึงอ่านเป็นเจตนา: "ลบแก้วกาแฟ"
+  await cartPage.remove("แก้วกาแฟเซรามิก");
+
+  await expect(cartPage.items).toHaveCount(1);
+  await expect(cartPage.items).toContainText("เมาส์ไร้สาย");
 });
 
 
@@ -97,6 +132,19 @@ test.fixme("CartPage.remove() ลบสินค้าออกจากตะ�
 //        ใน test: เตรียมเมาส์ p03 จำนวน 1, goto(), increase("เมาส์ไร้สาย") สองครั้ง
 //        ตรวจว่า cartPage.subtotal เป็น "1,770 บาท" (590 x 3) แล้ว applyCoupon("DN10") ตรวจ cartPage.total เป็น "1,593 บาท"
 // ------------------------------------------------
-test.fixme("CartPage.increase() แล้วใช้โค้ดส่วนลดต่อ", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 5 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("CartPage.increase() แล้วใช้โค้ดส่วนลดต่อ", async ({ page }) => {
+  await page.request.post("/api/cart", { data: { productId: "p03", quantity: 1 } });
+
+  const cartPage = new CartPage(page);
+  await cartPage.goto();
+  // เรียกติดกันได้ เพราะ increase() รอให้จำนวนเพิ่มจริงก่อนจบ (ดูเหตุผลใน CartPage.ts)
+  await cartPage.increase("เมาส์ไร้สาย");
+  await cartPage.increase("เมาส์ไร้สาย");
+
+  // 590 x 3 = 1,770
+  await expect(cartPage.subtotal).toHaveText("1,770 บาท");
+
+  // method หลายตัวต่อกันเป็น flow ได้ ลด 10% ของ 1,770 = 177 (ปัดเศษแล้ว) ยอดสุทธิ 1,593
+  await cartPage.applyCoupon("DN10");
+  await expect(cartPage.total).toHaveText("1,593 บาท");
 });

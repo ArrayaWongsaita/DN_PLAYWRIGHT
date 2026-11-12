@@ -67,9 +67,15 @@ export const test = base.extend<MyFixtures>({
     });
   },
 
-  // ข้อ 3: เขียน fixture นี้เอง (login เป็น ADMIN ผ่าน API แล้ว use(page))
+  // ข้อ 3 (เฉลย): login เป็น ADMIN ผ่าน API แล้ว use(page)
+  // ทำไมทำเป็น fixture แยก ทั้งที่ข้อ 4 เปลี่ยน account ด้วย test.use ก็ได้ผลเหมือนกัน: ชื่อ adminPage บอกบทบาทใน argument ชัดเจน
+  // และ test ไม่ต้องมี describe + test.use ครอบ (แต่ใช้ร่วมกับ loggedInPage ใน test เดียวกันไม่เหมาะ เพราะทั้งคู่ login บน page ตัวเดียวกัน)
   adminPage: async ({ page }, use) => {
-    throw new Error("👉 ยังไม่ได้เขียน fixture นี้");
+    const res = await page.request.post("/api/auth/login", { data: ADMIN });
+    // ตรวจ status ของขั้นเตรียม ถ้า login พัง จะรู้ที่ fixture ไม่ใช่ไปพังที่หน้าจัดการสินค้า
+    await expect(res).toBeOK();
+    await use(page);
+    // ไม่มี teardown: cookie ของ context นี้ถูกทิ้งพร้อม context เมื่อ test จบอยู่แล้ว (ที่ loggedInPage logout เพื่อโชว์ว่า teardown เขียนได้)
   },
 
   // ---- auto fixture ----

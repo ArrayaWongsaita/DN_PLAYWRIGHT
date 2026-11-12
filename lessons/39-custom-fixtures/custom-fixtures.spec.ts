@@ -42,8 +42,14 @@ test("cartWithItem มีหูฟังอยู่ในตะกร้าแ�
 // แนวทาง: เหมือนตัวอย่างที่ 1 แต่เปิดหน้าแรก "/" ตรวจว่าใน nav "เมนูหลัก" มีลิงก์ "บัญชีของฉัน"
 //        และมีปุ่ม "ออกจากระบบ" แต่ไม่มีลิงก์ "เข้าสู่ระบบ"
 // ------------------------------------------------
-test.fixme("loggedInPage เห็นเมนูของคนที่ login แล้ว", async ({ loggedInPage }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("loggedInPage เห็นเมนูของคนที่ login แล้ว", async ({ loggedInPage }) => {
+  // goto หลังจากที่ fixture login เสร็จแล้ว เพราะ fixture ทำงานเสร็จก่อนเนื้อ test เริ่ม จึงไม่มีทางเห็นหน้าก่อน login
+  await loggedInPage.goto("/");
+  const nav = loggedInPage.getByRole("navigation", { name: "เมนูหลัก" });
+  await expect(nav.getByRole("link", { name: "บัญชีของฉัน" })).toBeVisible();
+  await expect(nav.getByRole("button", { name: "ออกจากระบบ" })).toBeVisible();
+  // ตรวจว่า "ไม่มี" ลิงก์เข้าสู่ระบบ ด้วย toHaveCount(0) ซึ่งรอ (retry) จนจำนวนเป็น 0
+  await expect(nav.getByRole("link", { name: "เข้าสู่ระบบ" })).toHaveCount(0);
 });
 
 
@@ -52,8 +58,14 @@ test.fixme("loggedInPage เห็นเมนูของคนที่ login 
 // แนวทาง: เปิด /cart กดปุ่ม "ไปชำระเงิน" ตรวจว่า URL เป็น /checkout และ heading "ชำระเงิน" ขึ้น
 //        ช่อง "ชื่อ-นามสกุล" ถูกเติมด้วย "สมชาย ใจดี" เพราะ fixture login ไว้แล้ว (toHaveValue)
 // ------------------------------------------------
-test.fixme("cartWithItem ไปหน้าชำระเงินแล้วชื่อถูกเติมให้", async ({ cartWithItem }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("cartWithItem ไปหน้าชำระเงินแล้วชื่อถูกเติมให้", async ({ cartWithItem }) => {
+  await cartWithItem.goto("/cart");
+  await cartWithItem.getByRole("button", { name: "ไปชำระเงิน" }).click();
+
+  await expect(cartWithItem).toHaveURL("/checkout");
+  await expect(cartWithItem.getByRole("heading", { name: "ชำระเงิน" })).toBeVisible();
+  // หน้าเติมชื่อให้เพราะ fixture login ไว้แล้ว (ถ้าไม่ login ช่องนี้จะว่าง) นี่คือประโยชน์ของ fixture ที่ต่อกัน
+  await expect(cartWithItem.getByLabel("ชื่อ-นามสกุล")).toHaveValue("สมชาย ใจดี");
 });
 
 
@@ -64,8 +76,11 @@ test.fixme("cartWithItem ไปหน้าชำระเงินแล้ว�
 //        (ADMIN เตรียมไว้ใน fixtures.ts แล้ว และ import มาในไฟล์นี้แล้ว)
 //        ใน test: เปิด /admin/products ตรวจ heading "เพิ่มสินค้าใหม่" (ระดับ 2) และตาราง "ตารางสินค้า" ขึ้น
 // ------------------------------------------------
-test.fixme("adminPage เข้าหน้าจัดการสินค้าได้", async ({ adminPage }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("adminPage เข้าหน้าจัดการสินค้าได้", async ({ adminPage }) => {
+  await adminPage.goto("/admin/products");
+  // ถ้า login เป็น user ธรรมดา หน้านี้จะแสดง "คุณไม่มีสิทธิ์เข้าหน้านี้" แทน การเห็นตารางจึงพิสูจน์ว่า fixture login เป็น admin จริง
+  await expect(adminPage.getByRole("table", { name: "ตารางสินค้า" })).toBeVisible();
+  await expect(adminPage.getByRole("heading", { name: "เพิ่มสินค้าใหม่", level: 2 })).toBeVisible();
 });
 
 
@@ -74,6 +89,14 @@ test.fixme("adminPage เข้าหน้าจัดการสินค้�
 // แนวทาง: ใช้ test.describe ครอบ แล้วเรียก test.use({ account: ADMIN }) ในนั้น (ADMIN ถูก import ไว้แล้ว)
 //        ใน test ใช้ loggedInPage เปิด /account ตรวจ "สิทธิ์: ผู้ดูแลระบบ" (fixture เดิมแต่ login เป็น admin)
 // ------------------------------------------------
-test.fixme("เปลี่ยน account เป็น admin ด้วย test.use", async ({ loggedInPage }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test.describe("account เป็น admin", () => {
+  // test.use ในนี้เปลี่ยนค่า option fixture account เฉพาะ test ที่อยู่ใน describe นี้
+  // (test อื่นนอก describe ยังได้ USER ตามค่าเริ่มต้น ลองดูตัวอย่างที่ 1)
+  test.use({ account: ADMIN });
+
+  test("loggedInPage login เป็น admin ตาม option", async ({ loggedInPage }) => {
+    await loggedInPage.goto("/account");
+    await expect(loggedInPage.getByText("สิทธิ์: ผู้ดูแลระบบ")).toBeVisible();
+    await expect(loggedInPage.getByText("อีเมล: admin@dnshop.test")).toBeVisible();
+  });
 });
