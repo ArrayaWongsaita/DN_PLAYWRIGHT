@@ -79,7 +79,7 @@ test("การ์ดหมวกแก๊ปมีปุ่มสินค้�
 // ------------------------------------------------
 test("การ์ดที่มีปุ่มสินค้าหมดมีใบเดียวและเป็นหมวกแก๊ป", async ({ page }) => {
   await page.goto("/products");
-  // has รับ locator ที่เขียนขึ้นต้นจาก page เสมอ แต่ Playwright หาให้ "ในแต่ละการ์ด" เอง
+  // has รับ locator ที่เขียนแยกอิสระโดยขึ้นต้นจาก page (ไม่ต่อ chain ของการ์ดซ้ำ) แล้ว Playwright หาให้ "ในแต่ละการ์ด" เอง
   const soldOutCards = page.getByRole("listitem").filter({ has: page.getByRole("button", { name: "สินค้าหมด" }) });
   // toHaveCount รอให้รายการโหลดเสร็จ แล้วยืนยันว่ามีใบเดียว
   await expect(soldOutCards).toHaveCount(1);

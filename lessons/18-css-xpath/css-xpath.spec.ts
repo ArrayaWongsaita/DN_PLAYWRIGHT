@@ -116,7 +116,7 @@ test("หาการ์ดหมวกแก๊ปด้วย XPath", async ({
 // ------------------------------------------------
 test("ใช้ and หาลิงก์หูฟัง", async ({ page }) => {
   await page.goto("/products");
-  // and ต้องเป็น element เดียวกัน: ลิงก์ <a> ที่ข้อความตรง ส่วนรูปที่ alt เป็นชื่อเดียวกันไม่ใช่ลิงก์ จึงไม่เข้ามา
+  // and ต้องเป็น element เดียวกัน: ลิงก์ <a> ที่ข้อความตรง และ getByText ไม่ดู alt ของรูปเลย (รูปจึงไม่ถูกนับ ได้ 1 ตัวพอดี)
   const link = page.getByRole("link").and(page.getByText("หูฟังไร้สาย DN Buds"));
   await expect(link).toHaveCount(1);
 });
