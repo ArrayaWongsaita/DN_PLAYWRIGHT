@@ -27,7 +27,7 @@ export default async function AccountPage() {
         <ul aria-label="ประวัติคำสั่งซื้อ">
           {data.orders.map((o) => (
             <li key={o.id}>
-              <a href={`/orders/${o.id}`}>{o.id}</a> - {formatBaht(o.total + o.shippingFee)}
+              <a href={`/orders/${o.id}`}>{o.id}</a> - {formatBaht(o.total)}
             </li>
           ))}
         </ul>

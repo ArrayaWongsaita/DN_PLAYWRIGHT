@@ -232,3 +232,24 @@ test("storageState ที่ลบ dn_sid แล้วยัง login อยู�
   await expect(page2.getByTestId("cart-count")).toHaveText("0");
   await context2.close();
 });
+
+test("account แสดงยอดคำสั่งซื้อครั้งเดียว ตรงกับหน้า orders", async ({ page }) => {
+  await login(page);
+  const cartRes = await page.request.post("/api/cart", { data: { productId: "p01", quantity: 1 } });
+  expect(cartRes.status()).toBe(201);
+  const orderRes = await page.request.post("/api/orders", {
+    data: {
+      customer: { name: "สมหมาย", address: "กรุงเทพ", phone: "0812345678" },
+      shipping: "standard",
+      payment: "cod",
+    },
+  });
+  expect(orderRes.status()).toBe(201);
+
+  await page.goto("/orders/DN-0001");
+  await expect(page.getByText("1,340 บาท")).toBeVisible();
+
+  await page.goto("/account");
+  const history = page.getByRole("list", { name: "ประวัติคำสั่งซื้อ" });
+  await expect(history.getByRole("listitem").filter({ hasText: "DN-0001" })).toContainText("1,340 บาท");
+});
