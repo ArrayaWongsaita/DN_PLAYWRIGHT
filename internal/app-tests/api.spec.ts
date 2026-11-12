@@ -205,3 +205,15 @@ test("export CSV", async ({ request }) => {
   expect(lines[0]).toBe("id,name,category,price,stock");
   expect(lines).toHaveLength(11);
 });
+
+test("หน้า /products/p01 ได้ dn_sid (matcher ไม่ตัด path products/)", async ({ request }) => {
+  const res = await request.get("/products/p01");
+  expect(res.headers()["set-cookie"] ?? "").toContain("dn_sid=");
+});
+
+test("ไฟล์ static นามสกุล .svg/.txt ไม่ได้ dn_sid", async ({ request }) => {
+  for (const path of ["/products/p01.svg", "/downloads/guide.txt"]) {
+    const res = await request.get(path);
+    expect(res.headers()["set-cookie"] ?? "", path).not.toContain("dn_sid");
+  }
+});
