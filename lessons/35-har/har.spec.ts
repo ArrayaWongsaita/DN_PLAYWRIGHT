@@ -52,8 +52,15 @@ test("หน้า products: คำขอที่ไม่อยู่ใน HA
 // แนวทาง: เหมือนตัวอย่างที่ 1 รอ "พบสินค้า 10 รายการ" แล้วตรวจว่า heading ในรายการสินค้า
 //        ชิ้นแรกคือ "หูฟังไร้สาย DN Buds" (first()) และชิ้นสุดท้ายคือ "สมุดโน้ตลายจุด" (last())
 // ------------------------------------------------
-test.fixme("หน้า products: เล่นซ้ำ HAR แล้วตรวจชื่อสินค้าแรกและสุดท้าย", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า products: เล่นซ้ำ HAR แล้วตรวจชื่อสินค้าแรกและสุดท้าย", async ({ page }) => {
+  await page.routeFromHAR(HAR, { url: "**/api/products*" });
+  await page.goto("/products");
+  await expect(page.getByText("พบสินค้า 10 รายการ")).toBeVisible();
+
+  // ลำดับในไฟล์ HAR คือลำดับ "แนะนำ" ตอนอัด (สินค้าแนะนำก่อน) ลำดับจึงคงที่ ตรวจด้วย first/last ได้ (บท 17)
+  const names = page.getByRole("list", { name: "รายการสินค้า" }).getByRole("heading");
+  await expect(names.first()).toHaveText("หูฟังไร้สาย DN Buds");
+  await expect(names.last()).toHaveText("สมุดโน้ตลายจุด");
 });
 
 
@@ -62,8 +69,13 @@ test.fixme("หน้า products: เล่นซ้ำ HAR แล้วตร�
 // แนวทาง: routeFromHAR(HAR, { url: "**/api/products*" }) แล้ว goto("/products?category=books")
 //        ตรวจ "พบสินค้า 3 รายการ" และว่ารายการสินค้ามีข้อความ "หนังสือ TypeScript เบื้องต้น"
 // ------------------------------------------------
-test.fixme("หน้า products: เล่นซ้ำคำตอบของหมวดหนังสือจาก HAR", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า products: เล่นซ้ำคำตอบของหมวดหนังสือจาก HAR", async ({ page }) => {
+  await page.routeFromHAR(HAR, { url: "**/api/products*" });
+  // หน้าอ่าน ?category=books แล้ว fetch "/api/products?category=books" ซึ่งตรงกับ entry ที่ 2 ในไฟล์ HAR (URL ต้องตรงทุกตัวอักษร)
+  await page.goto("/products?category=books");
+
+  await expect(page.getByText("พบสินค้า 3 รายการ")).toBeVisible();
+  await expect(page.getByRole("list", { name: "รายการสินค้า" })).toContainText("หนังสือ TypeScript เบื้องต้น");
 });
 
 
@@ -72,8 +84,14 @@ test.fixme("หน้า products: เล่นซ้ำคำตอบของ
 // แนวทาง: routeFromHAR(HAR, { url: "**/api/products*", notFound: "fallback" }) แล้ว goto("/products?q=เมาส์")
 //        คราวนี้ไม่มี alert แต่หน้าแสดง "พบสินค้า 1 รายการ" และมีสินค้า "เมาส์ไร้สาย" (มาจาก server จริง)
 // ------------------------------------------------
-test.fixme("หน้า products: คำขอที่ไม่อยู่ใน HAR ไปถึง server จริงเมื่อใช้ fallback", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า products: คำขอที่ไม่อยู่ใน HAR ไปถึง server จริงเมื่อใช้ fallback", async ({ page }) => {
+  // fallback: คำขอที่ไม่อยู่ใน HAR ไม่ถูก abort แต่ไปถึง server จริง (เหมาะเมื่ออัด HAR ไว้แค่บางคำขอ)
+  await page.routeFromHAR(HAR, { url: "**/api/products*", notFound: "fallback" });
+  await page.goto("/products?q=เมาส์");
+
+  // เห็นผลลัพธ์จาก server จริง: ค้นหา "เมาส์" ได้เมาส์ไร้สายชิ้นเดียว
+  await expect(page.getByText("พบสินค้า 1 รายการ")).toBeVisible();
+  await expect(page.getByRole("list", { name: "รายการสินค้า" })).toContainText("เมาส์ไร้สาย");
 });
 
 
@@ -85,8 +103,24 @@ test.fixme("หน้า products: คำขอที่ไม่อยู่ใ
 //        goto("/products") รอ "พบสินค้า 10 รายการ" แล้วเรียก await page.context().close() (ไฟล์ถูกเขียนตอน context ปิด)
 //        อ่านไฟล์ด้วย JSON.parse(fs.readFileSync(MY_HAR, "utf8")) แล้วตรวจว่า log.entries มี 1 รายการ และ url มี "/api/products"
 // ------------------------------------------------
-test.fixme("หน้า products: อัด HAR ของตัวเองด้วย update true", async ({ page }, testInfo) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า products: อัด HAR ของตัวเองด้วย update true", async ({ page }, testInfo) => {
+  // ไฟล์ .local.har อยู่ใน .gitignore จึงไม่ถูก commit
+  // ใส่ parallelIndex (เลขของ worker ที่รันอยู่) ในชื่อ เพื่อไม่ให้หลาย worker เขียนไฟล์เดียวกันพร้อมกันเมื่อรันซ้ำหลายรอบ (--repeat-each)
+  const MY_HAR = `lessons/35-har/hars/my-products-${testInfo.parallelIndex}.local.har`;
+
+  // update: true = ไม่เล่นซ้ำ แต่ส่งคำขอไป server จริงแล้วบันทึกลงไฟล์
+  // updateContent: "embed" ใส่เนื้อหา response ไว้ในไฟล์ HAR เลย (ค่าเริ่มต้น "attach" จะแยกเนื้อหาเป็นไฟล์ .json ข้างๆ ซึ่ง .gitignore ไม่ครอบคลุม)
+  await page.routeFromHAR(MY_HAR, { url: "**/api/products*", update: true, updateContent: "embed" });
+  await page.goto("/products");
+  // รอให้ response มาถึงหน้า (เห็นรายการ) ก่อน ไม่งั้นปิด context ก่อนที่จะอัดทัน
+  await expect(page.getByText("พบสินค้า 10 รายการ")).toBeVisible();
+
+  // ไฟล์ HAR ถูกเขียนตอน context ปิด จึงปิดเอง แล้วค่อยอ่านไฟล์ (fixture ปิด context ซ้ำตอนจบ test ได้โดยไม่ error)
+  await page.context().close();
+
+  const har = JSON.parse(fs.readFileSync(MY_HAR, "utf8"));
+  expect(har.log.entries).toHaveLength(1);
+  expect(har.log.entries[0].request.url).toContain("/api/products");
 });
 
 
@@ -98,6 +132,21 @@ test.fixme("หน้า products: อัด HAR ของตัวเองด�
 //        (ใส่ ${testInfo.parallelIndex} ในชื่อไฟล์เหมือนข้อ 4)
 //        เล่นซ้ำไฟล์ใหม่นั้น goto("/products") ตรวจว่าการ์ดหูฟังไร้สาย DN Buds แสดง "1 บาท"
 // ------------------------------------------------
-test.fixme("หน้า products: แก้ไฟล์ HAR แล้วเล่นซ้ำ ราคาต้องเปลี่ยนตาม", async ({ page }, testInfo) => {
-  // 👉 เขียน test ของข้อ 5 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า products: แก้ไฟล์ HAR แล้วเล่นซ้ำ ราคาต้องเปลี่ยนตาม", async ({ page }, testInfo) => {
+  const har = JSON.parse(fs.readFileSync(HAR, "utf8"));
+  // หา entry ของรายการทั้งหมด (URL ลงท้ายด้วย /api/products? เพราะหน้าเรียกโดยไม่มีตัวกรอง)
+  const entry = har.log.entries.find((e: { request: { url: string } }) => e.request.url.endsWith("/api/products?"));
+  // เนื้อหา response อยู่ใน content.text เป็นข้อความ JSON: แปลงเป็น object แก้ แล้วแปลงกลับเป็นข้อความ
+  const body = JSON.parse(entry.response.content.text);
+  body.products[0].price = 1;
+  entry.response.content.text = JSON.stringify(body);
+
+  // ชื่อมี parallelIndex เหมือนข้อ 4 เพื่อไม่ชนกันเมื่อรันขนาน
+  const EDITED = `lessons/35-har/hars/edited-${testInfo.parallelIndex}.local.har`;
+  fs.writeFileSync(EDITED, JSON.stringify(har));
+
+  // เล่นซ้ำไฟล์ที่แก้แล้ว: ราคาที่เห็นต้องมาจากไฟล์ ไม่ใช่ server
+  await page.routeFromHAR(EDITED, { url: "**/api/products*" });
+  await page.goto("/products");
+  await expect(page.getByRole("listitem").filter({ hasText: "หูฟังไร้สาย DN Buds" })).toContainText("1 บาท");
 });

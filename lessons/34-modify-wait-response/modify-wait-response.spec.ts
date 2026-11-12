@@ -74,8 +74,22 @@ test("หน้า products: กดเพิ่มเมาส์ลงตะก
 //        json.products.find((p) => p.id === "p03").price = 1 แล้ว fulfill({ response, json })
 //        ตรวจว่าการ์ดของ "เมาส์ไร้สาย" มีข้อความ "1 บาท" และการ์ดของ "หูฟังไร้สาย DN Buds" ยัง "1,290 บาท"
 // ------------------------------------------------
-test.fixme("หน้า products: แก้ราคาเมาส์ไร้สายเป็น 1 บาท", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า products: แก้ราคาเมาส์ไร้สายเป็น 1 บาท", async ({ page }) => {
+  await page.route("**/api/products*", async (route) => {
+    const response = await route.fetch();
+    const json = await response.json();
+    // หาด้วย id (p03) แทนการใช้ลำดับ เพราะลำดับในรายการเปลี่ยนได้เมื่อมีการเรียง แต่ id ไม่เปลี่ยน
+    json.products.find((p: { id: string }) => p.id === "p03").price = 1;
+    // fulfill ด้วย response เดิมเป็นฐาน เพื่อคง status และ header ที่ server ตอบมา เปลี่ยนแค่ body
+    await route.fulfill({ response, json });
+  });
+
+  await page.goto("/products");
+
+  // กรองการ์ดด้วยชื่อ (บท 16) แล้วตรวจข้อความราคาในการ์ดนั้น
+  await expect(page.getByRole("listitem").filter({ hasText: "เมาส์ไร้สาย" })).toContainText("1 บาท");
+  // สินค้าอื่นไม่ถูกแตะต้อง ยืนยันว่าเราแก้เฉพาะชิ้นเดียวจริง
+  await expect(page.getByRole("listitem").filter({ hasText: "หูฟังไร้สาย DN Buds" })).toContainText("1,290 บาท");
 });
 
 
@@ -86,8 +100,24 @@ test.fixme("หน้า products: แก้ราคาเมาส์ไร้
 //        จากนั้น fill ช่อง "ค้นหาสินค้า" ด้วย "ไร้สาย" แล้ว press("Enter") await promise
 //        ตรวจ response.status() เป็น 200 และ (await response.json()).total เป็น 2
 // ------------------------------------------------
-test.fixme("หน้า products: ค้นหาไร้สายแล้วตรวจ response ที่ server ตอบ", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า products: ค้นหาไร้สายแล้วตรวจ response ที่ server ตอบ", async ({ page }) => {
+  await page.goto("/products");
+  // รอให้รายการแรกโหลดเสร็จก่อน ถ้ากรอกตอนหน้ายังไม่พร้อม (ยังไม่ hydrate) ข้อความที่กรอกอาจหายหรือ Enter ไม่ทำงาน
+  await expect(page.getByText("พบสินค้า 10 รายการ")).toBeVisible();
+
+  // เงื่อนไข q= ทำให้ไม่ไปจับ response ของการโหลดครั้งแรก (ที่ไม่มี q) ซึ่งเสร็จไปแล้วด้วย
+  const responsePromise = page.waitForResponse(
+    (r) => r.url().includes("/api/products") && r.url().includes("q="),
+  );
+  await page.getByLabel("ค้นหาสินค้า").fill("ไร้สาย");
+  await page.getByLabel("ค้นหาสินค้า").press("Enter");
+
+  const response = await responsePromise;
+  expect(response.status()).toBe(200);
+  // seed มีสินค้าชื่อมี "ไร้สาย" สองชิ้น: หูฟังไร้สาย DN Buds กับเมาส์ไร้สาย
+  expect((await response.json()).total).toBe(2);
+  // ฝั่งหน้าจอต้องสอดคล้องกับที่ API ตอบ
+  await expect(page.getByText("พบสินค้า 2 รายการ")).toBeVisible();
 });
 
 
@@ -97,8 +127,20 @@ test.fixme("หน้า products: ค้นหาไร้สายแล้ว
 //        (แบบเดียวกับบท 33 ต่างกันที่นี่ไม่มี response เลย เหมือนเน็ตหลุด)
 //        จากนั้นเรียก await page.unroute("**/api/products*") เลิกดัก แล้วกดปุ่ม "ลองใหม่" ตรวจว่าเห็น "พบสินค้า 10 รายการ"
 // ------------------------------------------------
-test.fixme("หน้า products: เน็ตหลุด (abort) แล้วกดลองใหม่หลังเลิกดัก", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า products: เน็ตหลุด (abort) แล้วกดลองใหม่หลังเลิกดัก", async ({ page }) => {
+  await page.route("**/api/products*", async (route) => {
+    // abort = คำขอล้มเหลวแบบไม่มี response (เหมือนเน็ตหลุด) fetch ฝั่งหน้าจะ reject แทนที่จะได้ status
+    await route.abort();
+  });
+
+  await page.goto("/products");
+  const alert = page.getByRole("alert").filter({ hasText: "โหลดสินค้าไม่สำเร็จ กรุณาลองใหม่" });
+  await expect(alert).toBeVisible();
+
+  // เลิกดัก: คำขอต่อจากนี้ไปถึง server จริงตามปกติ (ต้องใช้ pattern เดียวกับตอน route)
+  await page.unroute("**/api/products*");
+  await alert.getByRole("button", { name: "ลองใหม่" }).click();
+  await expect(page.getByText("พบสินค้า 10 รายการ")).toBeVisible();
 });
 
 
@@ -108,8 +150,21 @@ test.fixme("หน้า products: เน็ตหลุด (abort) แล้ว
 //        page.waitForRequest((r) => r.url().includes("/api/cart") && r.method() === "POST")
 //        กดปุ่ม "เพิ่มลงตะกร้า" ในการ์ดนั้น แล้ว await promise ตรวจ request.postDataJSON() เท่ากับ { productId: "p06", quantity: 1 }
 // ------------------------------------------------
-test.fixme("หน้า products: ตรวจ body ของคำขอเพิ่มลงตะกร้า", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า products: ตรวจ body ของคำขอเพิ่มลงตะกร้า", async ({ page }) => {
+  await page.goto("/products");
+  const card = page.getByRole("listitem").filter({ hasText: "แก้วกาแฟเซรามิก" });
+  // การ์ดขึ้นแล้วหน้าถึงจะพร้อมให้กด
+  await expect(card).toBeVisible();
+
+  // ต้องสร้าง promise ก่อนกด ไม่งั้นคำขอที่ออกไปแล้วจะถูกพลาด
+  const requestPromise = page.waitForRequest(
+    (r) => r.url().includes("/api/cart") && r.method() === "POST",
+  );
+  await card.getByRole("button", { name: "เพิ่มลงตะกร้า" }).click();
+
+  const request = await requestPromise;
+  // postDataJSON() แปลง body ที่ส่งไปเป็น object ให้ ตรวจได้ว่าหน้าส่งอะไรออกไปจริง
+  expect(request.postDataJSON()).toEqual({ productId: "p06", quantity: 1 });
 });
 
 
@@ -120,6 +175,19 @@ test.fixme("หน้า products: ตรวจ body ของคำขอเพ
 //        เปิดหน้า รอการ์ดแก้วกาแฟขึ้น กด "เพิ่มลงตะกร้า" (หน้าส่ง quantity 1 แต่ server ได้ 2)
 //        ตรวจว่า data-testid="cart-count" (getByTestId) มีข้อความ "2"
 // ------------------------------------------------
-test.fixme("หน้า products: เปลี่ยนจำนวนในคำขอจาก 1 เป็น 2 ก่อนส่งถึง server", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 5 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า products: เปลี่ยนจำนวนในคำขอจาก 1 เป็น 2 ก่อนส่งถึง server", async ({ page }) => {
+  await page.goto("/products");
+  const card = page.getByRole("listitem").filter({ hasText: "แก้วกาแฟเซรามิก" });
+  await expect(card).toBeVisible();
+
+  await page.route("**/api/cart", async (route) => {
+    // continue = ส่งคำขอไปที่ server จริง แต่เปลี่ยนบางส่วนได้ ตรงนี้เปลี่ยน body เป็นจำนวน 2 (header ยังเป็น JSON ตามเดิม)
+    await route.continue({ postData: JSON.stringify({ productId: "p06", quantity: 2 }) });
+  });
+
+  // หน้าส่ง quantity 1 แต่ server ได้รับ 2 (เพราะเราแก้ระหว่างทาง)
+  await card.getByRole("button", { name: "เพิ่มลงตะกร้า" }).click();
+
+  // จำนวนบนไอคอนตะกร้าเป็นของจริงจาก server (ตั้งหลังหน้ารีเฟรชข้อมูล) จึงรอด้วย assertion ที่ retry เอง
+  await expect(page.getByTestId("cart-count")).toHaveText("2");
 });

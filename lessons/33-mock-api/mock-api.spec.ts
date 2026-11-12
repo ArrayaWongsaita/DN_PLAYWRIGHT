@@ -69,8 +69,20 @@ test("หน้า products: API ตอบ 500 ต้องแสดง alert �
 // แนวทาง: เหมือนตัวอย่างที่ 1 แต่ fulfill ด้วย json: { products: [fakeProduct], total: 1 } (ตัวแปร fakeProduct อยู่ด้านบนไฟล์)
 //        goto("/products") แล้วตรวจว่าเห็นลิงก์ชื่อ "สินค้าทดลองจาก mock" และข้อความ "999 บาท" และ "พบสินค้า 1 รายการ"
 // ------------------------------------------------
-test.fixme("หน้า products: แสดงสินค้าปลอมที่ไม่มีใน seed", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า products: แสดงสินค้าปลอมที่ไม่มีใน seed", async ({ page }) => {
+  // ตั้ง route ก่อน goto (ถ้าตั้งทีหลัง fetch ของหน้าไปถึง server จริงไปแล้ว)
+  await page.route("**/api/products*", async (route) => {
+    // ตอบสินค้าปลอมชิ้นเดียว total ต้องตรงกับจำนวนใน products เพื่อให้ข้อมูลสมจริง
+    await route.fulfill({ json: { products: [fakeProduct], total: 1 } });
+  });
+
+  await page.goto("/products");
+
+  // ชื่อสินค้าเป็นลิงก์ใน h2 ของการ์ด (ดูตาราง UI ใน README) ใช้ role link
+  await expect(page.getByRole("link", { name: "สินค้าทดลองจาก mock" })).toBeVisible();
+  // ราคาแสดงรูปแบบ "999 บาท" (formatBaht) ตรวจในรายการสินค้า
+  await expect(page.getByRole("list", { name: "รายการสินค้า" })).toContainText("999 บาท");
+  await expect(page.getByText("พบสินค้า 1 รายการ")).toBeVisible();
 });
 
 
@@ -79,8 +91,19 @@ test.fixme("หน้า products: แสดงสินค้าปลอมท
 // แนวทาง: เหมือนตัวอย่างที่ 2 แต่ใช้ status: 503 ตรวจ alert "โหลดสินค้าไม่สำเร็จ กรุณาลองใหม่"
 //        แล้วตรวจเพิ่มว่าหน้าไม่แสดงข้อความ "พบสินค้า" (not.toBeVisible) เพราะโหลดไม่สำเร็จ
 // ------------------------------------------------
-test.fixme("หน้า products: API ตอบ 503 ต้องแสดง alert", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า products: API ตอบ 503 ต้องแสดง alert", async ({ page }) => {
+  await page.route("**/api/products*", async (route) => {
+    // หน้าเว็บดูแค่ว่า status ไม่ ok (>= 400) ไม่ว่า 500 หรือ 503 ก็เข้าทางเดียวกัน
+    await route.fulfill({ status: 503, json: { message: "ระบบกำลังปรับปรุง" } });
+  });
+
+  await page.goto("/products");
+
+  const alert = page.getByRole("alert").filter({ hasText: "โหลดสินค้าไม่สำเร็จ กรุณาลองใหม่" });
+  await expect(alert).toBeVisible();
+  // เมื่อ alert ขึ้นแล้ว แสดงว่าหน้าจบการโหลด (state เป็น error) ข้อความ "พบสินค้า" จึงไม่ควรมี
+  // ตรวจ "ไม่มี" หลังจากรอ alert แล้ว เพื่อไม่ให้ผ่านเพราะหน้ายังโหลดไม่เสร็จ
+  await expect(page.getByText("พบสินค้า")).toHaveCount(0);
 });
 
 
@@ -90,8 +113,23 @@ test.fixme("หน้า products: API ตอบ 503 ต้องแสดง al
 //        ถ้า q เป็น "เมาส์" ให้ fulfill ด้วยสินค้าปลอม 1 ชิ้น ถ้าไม่ใช่ให้ fulfill ด้วย products ว่าง
 //        เปิด /products?q=เมาส์ แล้วตรวจว่าเจอสินค้าปลอม (ลอง ?q=อื่น ด้วยก็ได้ ควรเจอ "ไม่พบสินค้าที่ค้นหา")
 // ------------------------------------------------
-test.fixme("หน้า products: ตอบตามคำค้นหาในคำขอ", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า products: ตอบตามคำค้นหาในคำขอ", async ({ page }) => {
+  await page.route("**/api/products*", async (route) => {
+    // route.request() คือคำขอที่ถูกดัก ดึง URL ออกมาแล้วอ่านพารามิเตอร์ q
+    const q = new URL(route.request().url()).searchParams.get("q");
+    // ถ้าค้นหา "เมาส์" ตอบสินค้าปลอม ไม่งั้นตอบรายการว่าง
+    const products = q === "เมาส์" ? [fakeProduct] : [];
+    await route.fulfill({ json: { products, total: products.length } });
+  });
+
+  // หน้าอ่าน ?q จาก URL แล้วส่งต่อให้ API (ส่งผ่าน encodeURIComponent ให้เองตอน fetch)
+  await page.goto("/products?q=เมาส์");
+  await expect(page.getByRole("link", { name: "สินค้าทดลองจาก mock" })).toBeVisible();
+
+  // เปลี่ยนคำค้นหาในหน้า: ครั้งนี้ handler เห็น q อื่น จึงตอบรายการว่าง
+  await page.getByLabel("ค้นหาสินค้า").fill("คีย์บอร์ด");
+  await page.getByLabel("ค้นหาสินค้า").press("Enter");
+  await expect(page.getByText("ไม่พบสินค้าที่ค้นหา")).toBeVisible();
 });
 
 
@@ -101,8 +139,28 @@ test.fixme("หน้า products: ตอบตามคำค้นหาใน
 //        ไม่งั้นเรียก await route.fallback() เพื่อปล่อยคำขอไปถึง server จริง
 //        เปิดหน้า ตรวจ alert แล้วกดปุ่ม "ลองใหม่" ตรวจว่ารายการแสดง "พบสินค้า 10 รายการ"
 // ------------------------------------------------
-test.fixme("หน้า products: กดลองใหม่แล้วโหลดสำเร็จ", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า products: กดลองใหม่แล้วโหลดสำเร็จ", async ({ page }) => {
+  // ตัวนับอยู่นอก handler เพื่อให้จำค่าข้ามหลายคำขอ
+  let calls = 0;
+  await page.route("**/api/products*", async (route) => {
+    calls += 1;
+    if (calls === 1) {
+      // คำขอแรก: จำลอง server พัง
+      await route.fulfill({ status: 500, json: { message: "เกิดข้อผิดพลาดภายในระบบ" } });
+    } else {
+      // คำขอถัดไป: ไม่ตอบเอง ส่งต่อไปที่ server จริง (fallback = ส่งต่อให้ handler ตัวถัดไป ถ้าไม่มีก็ไปที่ network)
+      await route.fallback();
+    }
+  });
+
+  await page.goto("/products");
+  const alert = page.getByRole("alert").filter({ hasText: "โหลดสินค้าไม่สำเร็จ กรุณาลองใหม่" });
+  await expect(alert).toBeVisible();
+
+  // กด "ลองใหม่": หน้าส่งคำขอครั้งที่สอง ซึ่งผ่านไปถึง server จริง
+  await alert.getByRole("button", { name: "ลองใหม่" }).click();
+  await expect(page.getByText("พบสินค้า 10 รายการ")).toBeVisible();
+  await expect(alert).toBeHidden();
 });
 
 
@@ -112,6 +170,18 @@ test.fixme("หน้า products: กดลองใหม่แล้วโห
 //        เปิด /products/p01 แล้วตรวจว่า h1 ยังเป็น "หูฟังไร้สาย DN Buds" (ข้อมูลจริง) และ handler ถูกเรียก 0 ครั้ง
 //        เหตุผลอยู่ในหัวข้อ "ทำไมหน้ารายละเอียดสินค้า mock ไม่ได้" ใน README
 // ------------------------------------------------
-test.fixme("หน้ารายละเอียดสินค้า: route ไม่มีผลเพราะ render ฝั่ง server", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 5 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้ารายละเอียดสินค้า: route ไม่มีผลเพราะ render ฝั่ง server", async ({ page }) => {
+  let calls = 0;
+  // pattern "**/api/products/**" ตรงกับ /api/products/p01 (ถ้ามีใครเรียก)
+  await page.route("**/api/products/**", async (route) => {
+    calls += 1;
+    await route.fulfill({ json: { ...fakeProduct, id: "p01" } });
+  });
+
+  await page.goto("/products/p01");
+
+  // หน้านี้ render ที่ server: HTML ที่ได้มามีชื่อสินค้าจริงอยู่แล้ว ไม่มี fetch จาก browser ให้ดัก
+  await expect(page.getByRole("heading", { level: 1, name: "หูฟังไร้สาย DN Buds" })).toBeVisible();
+  // handler ไม่เคยถูกเรียก (เช็กหลังเห็น h1 แล้ว ซึ่งแปลว่าหน้าโหลดเสร็จ)
+  expect(calls).toBe(0);
 });
