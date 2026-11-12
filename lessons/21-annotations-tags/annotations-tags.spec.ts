@@ -40,8 +40,12 @@ test("หน้าสินค้า p01 แสดงราคา 999 บาท 
 // แนวทาง: เหมือนตัวอย่างที่ 1 รับ { page, browserName } ใส่ { tag: "@smoke" } และ test.skip(browserName === "webkit", "เหตุผล")
 //        แล้ว goto("/products/p03") ตรวจ heading ระดับ 1
 // ------------------------------------------------
-test.fixme("หน้าสินค้า p03 (ติด @smoke ข้ามเมื่อเป็น webkit)", async ({ page, browserName }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้าสินค้า p03 แสดงชื่อเมาส์ไร้สาย", { tag: "@smoke" }, async ({ page, browserName }) => {
+  // เงื่อนไขเป็นเท็จใน chromium จึงไม่ถูกข้าม (เปลี่ยนเป็น "chromium" ดูผลข้ามได้)
+  test.skip(browserName === "webkit", "ยังไม่รองรับ webkit ในบทนี้");
+
+  await page.goto("/products/p03");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("เมาส์ไร้สาย");
 });
 
 
@@ -50,8 +54,12 @@ test.fixme("หน้าสินค้า p03 (ติด @smoke ข้ามเ
 // แนวทาง: เหมือนตัวอย่างที่ 2 เรียก test.fail() ต้น test แล้ว expect(...).toBeVisible({ timeout: 1000 })
 //        ทดลองลบ test.fail() ออกดูว่า test fail แล้วใส่กลับ
 // ------------------------------------------------
-test.fixme("หน้าสินค้า p02 แสดงราคา 1,000 บาท (บั๊กที่รู้แล้ว)", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้าสินค้า p02 แสดงราคา 1,000 บาท (บั๊กที่รู้แล้ว)", async ({ page }) => {
+  // ประกาศว่า test นี้ "ต้อง fail" (ราคาจริง 2,490 บาท) fail จริง = ผ่าน; ถ้าลบบรรทัดนี้ test จะ fail
+  test.fail();
+
+  await page.goto("/products/p02");
+  await expect(page.getByText("1,000 บาท")).toBeVisible({ timeout: 1000 });
 });
 
 
@@ -60,8 +68,13 @@ test.fixme("หน้าสินค้า p02 แสดงราคา 1,000 �
 // แนวทาง: เรียก test.slow() ต้น test (เพิ่ม timeout ของ test เป็น 3 เท่า) goto แล้วกดปุ่ม
 //        ตรวจ page.getByRole("status").filter({ hasText: "โหลดข้อมูลเสร็จแล้ว" })
 // ------------------------------------------------
-test.fixme("หน้า slow โหลดข้อมูลเสร็จ (ใช้ test.slow)", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า slow โหลดข้อมูลเสร็จ (ใช้ test.slow)", async ({ page }) => {
+  // timeout ของ test นี้เป็น 3 เท่า เผื่อหน้าที่ช้าตามธรรมชาติ (delay=1000 ทำให้ช้า แต่ยังไม่เกิน 30 วินาทีอยู่ดี)
+  test.slow();
+
+  await page.goto("/playground/slow?delay=1000");
+  await page.getByRole("button", { name: "โหลดข้อมูล" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "โหลดข้อมูลเสร็จแล้ว" })).toBeVisible();
 });
 
 
@@ -70,8 +83,9 @@ test.fixme("หน้า slow โหลดข้อมูลเสร็จ (ใ
 // แนวทาง: { tag: ["@smoke", "@cart"] } goto("/cart") ตรวจข้อความ "ตะกร้าของคุณยังว่างอยู่"
 //        จากนั้นรัน pnpm test 21-annotations-tags --grep @cart แล้วลอง --grep-invert @cart เทียบจำนวน test (อ่านวิธีใน README)
 // ------------------------------------------------
-test.fixme("ตะกร้าว่าง (ติด @smoke และ @cart)", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("ตะกร้าว่างแสดงข้อความตะกร้ายังว่าง", { tag: ["@smoke", "@cart"] }, async ({ page }) => {
+  await page.goto("/cart");
+  await expect(page.getByText("ตะกร้าของคุณยังว่างอยู่")).toBeVisible();
 });
 
 
@@ -80,6 +94,8 @@ test.fixme("ตะกร้าว่าง (ติด @smoke และ @cart)", 
 // แนวทาง: เขียนเสร็จให้เปลี่ยนเป็น test.only รัน pnpm test 21-annotations-tags สังเกตว่ามีแค่ test เดียวที่รัน
 //        จากนั้น **ลบ .only ออกก่อนบันทึกและส่งงาน** (อ่านเหตุผลและ forbidOnly ใน README)
 // ------------------------------------------------
-test.fixme("หน้า login มี heading เข้าสู่ระบบ", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 5 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test (ห้ามเหลือ .only ในไฟล์)
+test("หน้า login มี heading เข้าสู่ระบบ", async ({ page }) => {
+  // ตอนทดลองให้เขียนเป็น test.only แล้วรันดู จากนั้นลบ .only ออก (ใน solutions ไม่มี .only เหลืออยู่)
+  await page.goto("/login");
+  await expect(page.getByRole("heading", { level: 1, name: "เข้าสู่ระบบ" })).toBeVisible();
 });

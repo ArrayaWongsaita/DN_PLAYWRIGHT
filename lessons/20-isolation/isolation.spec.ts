@@ -62,12 +62,20 @@ test("เปิดหน้าแล้ว context ได้ cookie dn_sid แ�
 // แนวทาง: เหมือนตัวอย่างที่ 1 สองตัวนี้ต้องเขียนเป็นสอง test แยกกัน (ไม่ใช่ test เดียว)
 //        กดปุ่ม "เพิ่มลงตะกร้า" ในการ์ดที่ filter ด้วยชื่อสินค้า แล้วตรวจลิงก์ "ตะกร้า (1)"
 // ------------------------------------------------
-test.fixme("เสื้อยืด: ตะกร้ามี 1 ชิ้น", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("เสื้อยืด: ตะกร้ามี 1 ชิ้น", async ({ page }) => {
+  await page.goto("/products");
+  const card = page.getByRole("listitem").filter({ hasText: "เสื้อยืด DN สีขาว" });
+  await card.getByRole("button", { name: "เพิ่มลงตะกร้า" }).click();
+  // ตรง 1 ชิ้นเสมอ ไม่ว่าอีก test จะรันพร้อมกันหรือไม่ เพราะแต่ละ test มี context และ dn_sid ของตัวเอง
+  await expect(page.getByRole("link", { name: "ตะกร้า (1)" })).toBeVisible();
 });
 
-test.fixme("แก้วกาแฟ: ตะกร้ามี 1 ชิ้น", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("แก้วกาแฟ: ตะกร้ามี 1 ชิ้น", async ({ page }) => {
+  await page.goto("/products");
+  const card = page.getByRole("listitem").filter({ hasText: "แก้วกาแฟเซรามิก" });
+  await card.getByRole("button", { name: "เพิ่มลงตะกร้า" }).click();
+  // ไม่ปนกับเสื้อยืดของ test ข้างบน จึงเป็น 1 ไม่ใช่ 2
+  await expect(page.getByRole("link", { name: "ตะกร้า (1)" })).toBeVisible();
 });
 
 
@@ -78,8 +86,25 @@ test.fixme("แก้วกาแฟ: ตะกร้ามี 1 ชิ้น", 
 //        อ่าน cookie จาก context.cookies() แล้ว expect ว่าค่า dn_sid ของสองฝั่งไม่เท่ากัน
 //        อย่าลืม await context.close() ท้าย test เมื่อเปิดเอง
 // ------------------------------------------------
-test.fixme("สอง context ได้ dn_sid คนละค่า", async ({ browser }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("สอง context ได้ dn_sid คนละค่า", async ({ browser }) => {
+  // browser.newContext() ใช้ baseURL/locale จาก config ให้เอง
+  const contextA = await browser.newContext();
+  const contextB = await browser.newContext();
+  const pageA = await contextA.newPage();
+  const pageB = await contextB.newPage();
+  await pageA.goto("/products");
+  await pageB.goto("/products");
+
+  const sidA = (await contextA.cookies()).find((c) => c.name === "dn_sid")?.value;
+  const sidB = (await contextB.cookies()).find((c) => c.name === "dn_sid")?.value;
+  expect(sidA).toBeTruthy();
+  expect(sidB).toBeTruthy();
+  // คนละ context = คนละ session ของแอป
+  expect(sidA).not.toBe(sidB);
+
+  // context ที่เปิดเองต้องปิดเอง (context จาก fixture Playwright ปิดให้)
+  await contextA.close();
+  await contextB.close();
 });
 
 
@@ -88,6 +113,22 @@ test.fixme("สอง context ได้ dn_sid คนละค่า", async ({ 
 // แนวทาง: ต่อจากข้อ 2 ใน context แรกกด "เพิ่มลงตะกร้า" ที่หูฟัง ตรวจ "ตะกร้า (1)"
 //        แล้ว page ของ context ที่สอง reload (หรือ goto "/products" ใหม่) ตรวจ "ตะกร้า (0)"
 // ------------------------------------------------
-test.fixme("context ที่สองไม่เห็นตะกร้าของ context แรก", async ({ browser }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("context ที่สองไม่เห็นตะกร้าของ context แรก", async ({ browser }) => {
+  const contextA = await browser.newContext();
+  const contextB = await browser.newContext();
+  const pageA = await contextA.newPage();
+  const pageB = await contextB.newPage();
+  await pageA.goto("/products");
+  await pageB.goto("/products");
+
+  const card = pageA.getByRole("listitem").filter({ hasText: "หูฟังไร้สาย DN Buds" });
+  await card.getByRole("button", { name: "เพิ่มลงตะกร้า" }).click();
+  await expect(pageA.getByRole("link", { name: "ตะกร้า (1)" })).toBeVisible();
+
+  // ฝั่ง B ใช้ session อื่น โหลดใหม่แล้วยังต้องว่าง
+  await pageB.reload();
+  await expect(pageB.getByRole("link", { name: "ตะกร้า (0)" })).toBeVisible();
+
+  await contextA.close();
+  await contextB.close();
 });

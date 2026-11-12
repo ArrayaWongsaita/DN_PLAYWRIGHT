@@ -38,8 +38,11 @@ test("goto path สั้นได้เพราะมี baseURL และ tim
 //        ตัว test: goto("/playground/slow?delay=7000") กดปุ่ม "โหลดข้อมูล" แล้วตรวจ
 //        page.getByRole("status").filter({ hasText: "โหลดข้อมูลเสร็จแล้ว" }) ว่า toBeVisible()
 // ------------------------------------------------
-test.fixme("โหลดข้อมูลช้า 7 วินาที ต้องรอจนเสร็จ (ต้องแก้ expect.timeout)", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("โหลดข้อมูลช้า 7 วินาที ต้องรอจนเสร็จ", async ({ page }) => {
+  await page.goto("/playground/slow?delay=7000");
+  await page.getByRole("button", { name: "โหลดข้อมูล" }).click();
+  // ใช้เวลา ~7 วินาที เกิน expect.timeout เดิม (5 วินาที) แต่ผ่านเมื่อ config ตั้งเป็น 10 วินาที
+  await expect(page.getByRole("status").filter({ hasText: "โหลดข้อมูลเสร็จแล้ว" })).toBeVisible();
 });
 
 
@@ -49,8 +52,10 @@ test.fixme("โหลดข้อมูลช้า 7 วินาที ต้�
 //        ตัว test: รับ ({ page }, testInfo) goto("/") แล้ว expect(testInfo.retry).toBeGreaterThan(0)
 //        (testInfo.retry เป็น 0 ในรอบแรก และ 1 ในรอบ retry) ผลจะขึ้นว่า flaky แต่ exit code 0
 // ------------------------------------------------
-test.fixme("ผ่านเฉพาะรอบ retry (ต้องแก้ retries)", async ({ page }, testInfo) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("ผ่านเฉพาะรอบ retry", async ({ page }, testInfo) => {
+  await page.goto("/");
+  // testInfo.retry: 0 = รอบแรก, 1 = retry ครั้งแรก รอบแรกจงใจ fail เพื่อจำลอง test ที่ไม่เสถียร
+  expect(testInfo.retry, "รอบแรกจงใจให้ fail ต้องมี retries ใน config").toBeGreaterThan(0);
 });
 
 
@@ -60,6 +65,9 @@ test.fixme("ผ่านเฉพาะรอบ retry (ต้องแก้ re
 //        (ใส่ที่ top-level use ไม่ได้ผล เพราะ devices ของ project ทับไว้ README อธิบาย)
 //        ตัว test: goto("/") ตรวจปุ่ม "เปิดเมนู" toBeVisible() และ nav "เมนูหลัก" ตรวจลิงก์ "หน้าแรก" toBeHidden()
 // ------------------------------------------------
-test.fixme("จอแคบเห็นปุ่มเปิดเมนู (ต้องแก้ viewport)", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("จอแคบเห็นปุ่มเปิดเมนู", async ({ page }) => {
+  await page.goto("/");
+  // จอกว้าง 390px (< 768px) แอปซ่อน nav แล้วแสดงปุ่มเปิดเมนูแทน
+  await expect(page.getByRole("button", { name: "เปิดเมนู" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "เมนูหลัก" }).getByRole("link", { name: "หน้าแรก" })).toBeHidden();
 });

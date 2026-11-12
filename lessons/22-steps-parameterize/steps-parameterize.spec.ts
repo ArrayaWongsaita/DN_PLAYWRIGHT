@@ -70,8 +70,27 @@ for (const { q, expected } of searchCases) {
 // แนวทาง: เหมือนตัวอย่างที่ 1 step "เข้าสู่ระบบ" มี step ย่อย "กรอกอีเมลและรหัสผ่าน" (getByLabel("อีเมล"), getByLabel("รหัสผ่าน"))
 //        และ "กดปุ่มเข้าสู่ระบบ" ส่วน step ที่สองตรวจ heading ระดับ 1 "บัญชีของฉัน" และข้อความ "ชื่อ: สมชาย ใจดี"
 // ------------------------------------------------
-test.fixme("login แล้วเห็นหน้าบัญชี (แบ่งเป็น step)", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("login แล้วเห็นหน้าบัญชี (แบ่งเป็น step)", async ({ page }) => {
+  await test.step("เข้าสู่ระบบ", async () => {
+    await page.goto("/login");
+
+    // eslint-disable-next-line playwright/no-nested-step -- บทนี้สอนซ้อน step โดยตั้งใจ
+    await test.step("กรอกอีเมลและรหัสผ่าน", async () => {
+      await page.getByLabel("อีเมล").fill("user@dnshop.test");
+      await page.getByLabel("รหัสผ่าน").fill("password123");
+    });
+
+    // eslint-disable-next-line playwright/no-nested-step -- บทนี้สอนซ้อน step โดยตั้งใจ
+    await test.step("กดปุ่มเข้าสู่ระบบ", async () => {
+      await page.getByRole("button", { name: "เข้าสู่ระบบ" }).click();
+    });
+  });
+
+  await test.step("ตรวจหน้าบัญชี", async () => {
+    // ถ้า login ไม่สำเร็จ report จะชี้ว่าพังที่ step นี้ แยกจาก step เข้าสู่ระบบ
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("บัญชีของฉัน");
+    await expect(page.getByText("ชื่อ: สมชาย ใจดี")).toBeVisible();
+  });
 });
 
 
@@ -81,9 +100,23 @@ test.fixme("login แล้วเห็นหน้าบัญชี (แบ่
 //        ในแต่ละ test goto("/products") รอ "พบสินค้า 10 รายการ" แล้ว selectOption(category) และตรวจ "พบสินค้า N รายการ"
 //        เขียน array กับลูปไว้ใต้บรรทัดนี้ ไม่ต้องอยู่ใน test.fixme (ลบ test.fixme ด้านล่างทิ้งเมื่อทำเสร็จ)
 // ------------------------------------------------
-test.fixme("กรองหมวดหมู่ (สร้างจาก cases)", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
-});
+const categoryCases = [
+  { category: "อุปกรณ์ไอที", expected: 3 },
+  { category: "เสื้อผ้า", expected: 2 },
+  { category: "ของใช้ในบ้าน", expected: 2 },
+  { category: "หนังสือ", expected: 3 },
+];
+
+for (const { category, expected } of categoryCases) {
+  // ใส่ชื่อหมวดในชื่อ test เพื่อให้ไม่ซ้ำกันและรู้ว่าตัวไหนพัง
+  test(`กรองหมวด ${category} ได้ ${expected} รายการ`, async ({ page }) => {
+    await page.goto("/products");
+    await expect(page.getByText("พบสินค้า 10 รายการ")).toBeVisible();
+
+    await page.getByLabel("หมวดหมู่").selectOption(category);
+    await expect(page.getByText(`พบสินค้า ${expected} รายการ`)).toBeVisible();
+  });
+}
 
 
 // ------------------------------------------------
@@ -92,6 +125,24 @@ test.fixme("กรองหมวดหมู่ (สร้างจาก cases
 //        { id: "p03", name: "เมาส์ไร้สาย", price: "590 บาท" } วนสร้าง test แต่ละอันมี step "เปิดหน้า", step "ตรวจชื่อ" (heading ระดับ 1),
 //        step "ตรวจราคา" (getByText)
 // ------------------------------------------------
-test.fixme("หน้ารายละเอียดสินค้า (cases + step)", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
-});
+const productCases = [
+  { id: "p01", name: "หูฟังไร้สาย DN Buds", price: "1,290 บาท" },
+  { id: "p02", name: "คีย์บอร์ดเครื่องกล", price: "2,490 บาท" },
+  { id: "p03", name: "เมาส์ไร้สาย", price: "590 บาท" },
+];
+
+for (const { id, name, price } of productCases) {
+  test(`หน้ารายละเอียด ${id} ${name}`, async ({ page }) => {
+    await test.step("เปิดหน้า", async () => {
+      await page.goto(`/products/${id}`);
+    });
+
+    await test.step("ตรวจชื่อ", async () => {
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+    });
+
+    await test.step("ตรวจราคา", async () => {
+      await expect(page.getByText(price)).toBeVisible();
+    });
+  });
+}

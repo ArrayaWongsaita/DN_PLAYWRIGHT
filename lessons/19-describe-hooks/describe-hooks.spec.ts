@@ -59,14 +59,18 @@ test.describe("หน้าสินค้า เสื้อยืด DN สี
 //        (goto อยู่ใน beforeEach เท่านั้น ไม่ใส่ซ้ำในตัว test)
 // ------------------------------------------------
 test.describe("หน้าสินค้า คีย์บอร์ดเครื่องกล", () => {
-  // 👉 เพิ่ม test.beforeEach ที่ goto("/products/p02") ตรงนี้
-
-  test.fixme("แสดงชื่อสินค้าเป็น heading", async ({ page }) => {
-    // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+  // goto อยู่ที่เดียวใน beforeEach: ทุก test ในกลุ่มนี้เริ่มจากหน้า p02 ที่เปิดไว้แล้ว (page ตัวเดียวกับที่ test ได้รับ)
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/products/p02");
   });
 
-  test.fixme("แสดงราคา 2,490 บาท", async ({ page }) => {
-    // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+  test("แสดงชื่อสินค้าเป็น heading", async ({ page }) => {
+    // ไม่มี goto ในนี้ เพราะ beforeEach เปิดหน้าให้แล้ว
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("คีย์บอร์ดเครื่องกล");
+  });
+
+  test("แสดงราคา 2,490 บาท", async ({ page }) => {
+    await expect(page.getByText("2,490 บาท")).toBeVisible();
   });
 });
 
@@ -79,15 +83,21 @@ test.describe("หน้าสินค้า คีย์บอร์ดเค�
 //        beforeEach ของชั้นนอกจะทำงานก่อนทุก test ของชั้นใน
 // ------------------------------------------------
 test.describe("หน้าสินค้า เมาส์ไร้สาย", () => {
-  // 👉 เพิ่ม test.beforeEach ที่ goto("/products/p03") ตรงนี้
+  // beforeEach ของกลุ่มนอกทำงานก่อนทุก test ของกลุ่มในด้วย (ลำดับ: นอก -> ใน -> test)
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/products/p03");
+  });
 
   test.describe("ปุ่มจำนวน", () => {
-    test.fixme("ปุ่มลดจำนวนกดไม่ได้ตอนเริ่ม", async ({ page }) => {
-      // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+    test("ปุ่มลดจำนวนกดไม่ได้ตอนเริ่ม", async ({ page }) => {
+      // จำนวนเริ่มที่ 1 จึงลดไม่ได้ (disabled)
+      await expect(page.getByRole("button", { name: "ลดจำนวน" })).toBeDisabled();
     });
 
-    test.fixme("กดเพิ่มจำนวนแล้วช่องจำนวนเป็น 2", async ({ page }) => {
-      // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+    test("กดเพิ่มจำนวนแล้วช่องจำนวนเป็น 2", async ({ page }) => {
+      await page.getByRole("button", { name: "เพิ่มจำนวน" }).click();
+      // ช่องจำนวนเป็น input จึงตรวจค่าด้วย toHaveValue (ค่าเป็น string เสมอ)
+      await expect(page.getByLabel("จำนวน")).toHaveValue("2");
     });
   });
 });
@@ -100,9 +110,16 @@ test.describe("หน้าสินค้า เมาส์ไร้สาย"
 //        ตัว test ตรวจแค่ว่า heading ระดับ 1 คือ "หมอนอิงลายแมว" (ดูผลที่แนบใน HTML report: pnpm report)
 // ------------------------------------------------
 test.describe("หน้าสินค้า หมอนอิงลายแมว", () => {
-  // 👉 เพิ่ม test.beforeEach (goto("/products/p07")) และ test.afterEach (ใช้ testInfo.attach) ตรงนี้
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/products/p07");
+  });
 
-  test.fixme("แสดงชื่อสินค้าเป็น heading", async ({ page }) => {
-    // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+  // อาร์กิวเมนต์ที่สองคือ testInfo: attach แนบข้อมูลเข้า HTML report (pnpm report) afterEach ทำงานแม้ test fail
+  test.afterEach(async ({ page }, testInfo) => {
+    await testInfo.attach("หัวข้อหน้า", { body: await page.title(), contentType: "text/plain" });
+  });
+
+  test("แสดงชื่อสินค้าเป็น heading", async ({ page }) => {
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("หมอนอิงลายแมว");
   });
 });
