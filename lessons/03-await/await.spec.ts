@@ -42,7 +42,7 @@ test("หน้า /cart ต้องมี title และหัวข้อท
 test("หน้า /products ต้องมีหัวข้อ สินค้าทั้งหมด (ข้อนี้ลืม await)", async ({ page }) => {
   await page.goto("/products");
   // เติม await หน้า expect: ไม่งั้น test จบก่อนที่ assertion จะถูกตรวจเสร็จ
-  // ตอนที่ค่าถูกอยู่แล้วจะ "ผ่านหลอก" แต่ถ้าค่าผิดจะเจอ error แปลกๆ ว่า Test ended
+  // ตอนที่ค่าถูกอยู่แล้วมักจะผ่าน (เครื่องช้าอาจแดง) แต่ถ้าค่าผิดจะเจอ error แปลกๆ ว่า Test ended
   await expect(page.getByRole("heading", { name: "สินค้าทั้งหมด" })).toBeVisible();
 });
 
