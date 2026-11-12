@@ -65,8 +65,15 @@ test("หน้า /products ใช้ first, last, nth และวนตรว
 // แนวทาง: เหมือนตัวอย่างที่ 1 ใช้ getByLabel("หมวดหมู่").selectOption("หนังสือ") แล้ว toHaveCount(3)
 //        จากนั้นเลือก "ของใช้ในบ้าน" แล้ว toHaveCount(2) (ตัวนับเดิมใช้ต่อได้ เพราะ locator หาใหม่ทุกครั้ง)
 // ------------------------------------------------
-test.fixme("กรองหมวดแล้วนับจำนวนการ์ด", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("กรองหมวดแล้วนับจำนวนการ์ด", async ({ page }) => {
+  await page.goto("/products");
+  const cards = page.getByRole("list", { name: "รายการสินค้า" }).getByRole("listitem");
+  await page.getByLabel("หมวดหมู่").selectOption("หนังสือ");
+  // รอเองจนรายการกรองเสร็จ (ระหว่างโหลดรายการจะหายไปชั่วขณะ)
+  await expect(cards).toHaveCount(3);
+  // ใช้ locator เดิมต่อได้ เพราะมันหาใหม่ทุกครั้งที่ถูกใช้
+  await page.getByLabel("หมวดหมู่").selectOption("ของใช้ในบ้าน");
+  await expect(cards).toHaveCount(2);
 });
 
 
@@ -75,8 +82,14 @@ test.fixme("กรองหมวดแล้วนับจำนวนกา�
 // แนวทาง: เลือก "ราคาสูงไปต่ำ" ใบแรกคือ "คีย์บอร์ดเครื่องกล" ใบที่สองคือ "หูฟังไร้สาย DN Buds" ใบที่สามคือ "เมาส์ไร้สาย"
 //        ใช้ cards.first() และ cards.nth(1) / cards.nth(2) กับ toContainText
 // ------------------------------------------------
-test.fixme("เรียงราคาสูงไปต่ำแล้วตรวจสามใบแรก", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("เรียงราคาสูงไปต่ำแล้วตรวจสามใบแรก", async ({ page }) => {
+  await page.goto("/products");
+  const cards = page.getByRole("list", { name: "รายการสินค้า" }).getByRole("listitem");
+  await page.getByLabel("เรียงตาม").selectOption("ราคาสูงไปต่ำ");
+  // ลำดับคือสิ่งที่ตรวจ จึงใช้ first/nth ได้เหมาะสม; expect รอจนรายการเรียงใหม่เสร็จเอง
+  await expect(cards.first()).toContainText("คีย์บอร์ดเครื่องกล");
+  await expect(cards.nth(1)).toContainText("หูฟังไร้สาย DN Buds");
+  await expect(cards.nth(2)).toContainText("เมาส์ไร้สาย");
 });
 
 
@@ -85,8 +98,13 @@ test.fixme("เรียงราคาสูงไปต่ำแล้วต�
 // แนวทาง: พิมพ์ในช่อง "ค้นหาสินค้า" แล้วกด Enter (บท 07) ได้ "หูฟังไร้สาย DN Buds" กับ "เมาส์ไร้สาย" ตามลำดับแนะนำ
 //        ใช้ locator ของ heading แบบตัวอย่างที่ 1 แล้ว toHaveText([...])
 // ------------------------------------------------
-test.fixme("ค้นหาไร้สายแล้วตรวจชื่อทั้งสองใบ", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("ค้นหาไร้สายแล้วตรวจชื่อทั้งสองใบ", async ({ page }) => {
+  await page.goto("/products");
+  await page.getByLabel("ค้นหาสินค้า").fill("ไร้สาย");
+  await page.getByLabel("ค้นหาสินค้า").press("Enter");
+  const names = page.getByRole("list", { name: "รายการสินค้า" }).getByRole("heading");
+  // array ต้องมีจำนวนเท่ากับ element จริง (2 ใบ) และเรียงตามลำดับ "แนะนำ" (หูฟังเป็นสินค้าแนะนำจึงมาก่อน)
+  await expect(names).toHaveText(["หูฟังไร้สาย DN Buds", "เมาส์ไร้สาย"]);
 });
 
 
@@ -95,6 +113,15 @@ test.fixme("ค้นหาไร้สายแล้วตรวจชื่�
 // แนวทาง: cards.filter({ hasNotText: "หมวกแก๊ป" }) แล้ว await expect(...).toHaveCount(9) ก่อนวน all()
 //        ในลูปตรวจ card.getByRole("button", { name: "เพิ่มลงตะกร้า" })
 // ------------------------------------------------
-test.fixme("ทุกการ์ดที่ไม่ใช่หมวกแก๊ปกดเพิ่มลงตะกร้าได้", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("ทุกการ์ดที่ไม่ใช่หมวกแก๊ปกดเพิ่มลงตะกร้าได้", async ({ page }) => {
+  await page.goto("/products");
+  const cards = page
+    .getByRole("list", { name: "รายการสินค้า" })
+    .getByRole("listitem")
+    .filter({ hasNotText: "หมวกแก๊ป" });
+  // all() ไม่รอ จึงต้องรอให้รายการครบ 9 ใบก่อน ไม่งั้นอาจได้ array ว่างแล้วลูปไม่ทำงาน test จะผ่านแบบไม่ได้ตรวจอะไร
+  await expect(cards).toHaveCount(9);
+  for (const card of await cards.all()) {
+    await expect(card.getByRole("button", { name: "เพิ่มลงตะกร้า" })).toBeEnabled();
+  }
 });

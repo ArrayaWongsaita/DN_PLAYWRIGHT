@@ -86,8 +86,11 @@ test("and รวมเงื่อนไขของ element เดียว แ
 // แนวทาง: ปุ่มทั้งหมดในรายการหาได้ด้วย 'ul[aria-label="รายการสินค้า"] button' (เว้นวรรคหมายถึง "อยู่ข้างใน")
 //        ปุ่ม 10 ใบรวม "สินค้าหมด" ต้องกรองให้เหลือ 9 ด้วย :not([disabled]) ต่อท้าย button เช่น button:not([disabled])
 // ------------------------------------------------
-test.fixme("หาปุ่มที่กดได้ในรายการสินค้าด้วย CSS", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หาปุ่มที่กดได้ในรายการสินค้าด้วย CSS", async ({ page }) => {
+  await page.goto("/products");
+  // เว้นวรรคระหว่าง ul กับ button = button อยู่ลึกแค่ไหนก็ได้ข้างใน ul; :not([disabled]) ตัดปุ่ม "สินค้าหมด" ออก
+  const buttons = page.locator('ul[aria-label="รายการสินค้า"] button:not([disabled])');
+  await expect(buttons).toHaveCount(9);
 });
 
 
@@ -96,8 +99,13 @@ test.fixme("หาปุ่มที่กดได้ในรายการ�
 // แนวทาง: ใช้ XPath แบบตัวอย่างที่ 1 (ขึ้นไปหา parent) หรือเขียน //li[.//a[text()="หมวกแก๊ป"]]
 //        แล้วต่อ .getByRole("button", { name: "สินค้าหมด" }) ตรวจ toBeDisabled (เห็นไหมว่า locator ผสม XPath กับ getByRole ได้)
 // ------------------------------------------------
-test.fixme("หาการ์ดหมวกแก๊ปด้วย XPath", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หาการ์ดหมวกแก๊ปด้วย XPath", async ({ page }) => {
+  await page.goto("/products");
+  // XPath: <li> ที่ "มี" <a> ข้อความตรงกับ หมวกแก๊ป อยู่ข้างใน (.// = ค้นจากตำแหน่งปัจจุบันลงไปข้างใน)
+  const card = page.locator('xpath=//li[.//a[text()="หมวกแก๊ป"]]');
+  await expect(card).toHaveCount(1);
+  // ผสม XPath กับ getByRole ได้ เพราะต่อ locator ได้เสมอ
+  await expect(card.getByRole("button", { name: "สินค้าหมด" })).toBeDisabled();
 });
 
 
@@ -106,8 +114,11 @@ test.fixme("หาการ์ดหมวกแก๊ปด้วย XPath", as
 // แนวทาง: page.getByRole("link").and(page.getByText("หูฟังไร้สาย DN Buds")) เหมือนตัวอย่างที่ 3
 //        ถ้าเจอมากกว่า 1 ให้ดูข้อความ error ว่า element ไหนบ้าง (รูปไม่ใช่ลิงก์ จึงไม่ควรเข้ามา)
 // ------------------------------------------------
-test.fixme("ใช้ and หาลิงก์หูฟัง", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("ใช้ and หาลิงก์หูฟัง", async ({ page }) => {
+  await page.goto("/products");
+  // and ต้องเป็น element เดียวกัน: ลิงก์ <a> ที่ข้อความตรง ส่วนรูปที่ alt เป็นชื่อเดียวกันไม่ใช่ลิงก์ จึงไม่เข้ามา
+  const link = page.getByRole("link").and(page.getByText("หูฟังไร้สาย DN Buds"));
+  await expect(link).toHaveCount(1);
 });
 
 
@@ -116,6 +127,13 @@ test.fixme("ใช้ and หาลิงก์หูฟัง", async ({ page }
 // แนวทาง: banner โผล่หลังโหลดหน้า 0.5–2.5 วินาที ใช้ page.getByRole("button", { name: "ยอมรับทั้งหมด" }).or(page.getByRole("button", { name: "ปฏิเสธ" }))
 //        ผลลัพธ์ตรงสองปุ่มพร้อมกัน ถ้าใช้ expect(...).toBeVisible() จะเจอ strict mode violation ให้ต่อ .first() ก่อน
 // ------------------------------------------------
-test.fixme("ใช้ or รอปุ่มของ dialog คุกกี้", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("ใช้ or รอปุ่มของ dialog คุกกี้", async ({ page }) => {
+  await page.goto("/products?cookieBanner=1");
+  // dialog โผล่ช้า 0.5–2.5 วินาที expect รอให้เอง ไม่ต้องหน่วงเวลา
+  // ทั้งสองปุ่มโผล่พร้อมกัน or จึงตรง 2 element ต้อง .first() ไม่งั้นเจอ strict mode violation
+  const consentButton = page
+    .getByRole("button", { name: "ยอมรับทั้งหมด" })
+    .or(page.getByRole("button", { name: "ปฏิเสธ" }))
+    .first();
+  await expect(consentButton).toBeVisible();
 });
