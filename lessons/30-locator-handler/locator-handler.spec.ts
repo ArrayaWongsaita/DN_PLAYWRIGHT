@@ -110,8 +110,9 @@ test.fixme("นับจำนวนครั้งที่ handler ทำง�
 // ข้อ 4: handler ทำงานแล้วถอดออกด้วย page.removeLocatorHandler หลังถอดแล้ว handler ต้องไม่ทำงานอีก
 // แนวทาง: goto("/") เก็บ locator ของ h1 "DN Shop" ไว้ในตัวแปร (หัวข้อมองเห็นตลอด ทำให้ handler ทำงานได้แน่นอนไม่สุ่ม)
 //        ลงทะเบียน handler ด้วย locator นั้นที่ทำแค่ count++ ใส่ { noWaitAfter: true } (เพราะหัวข้อไม่หายหลัง handler ดู README หัวข้อ 5)
-//        hover ลิงก์ "หน้าแรก" หนึ่งครั้ง ตรวจ expect(count).toBe(1)
-//        แล้ว await page.removeLocatorHandler(หัวข้อ) (ต้องส่ง locator ตัวเดิมที่ใช้ตอนลงทะเบียน) hover อีกครั้ง ตรวจว่า count ยังเป็น 1
+//        hover ลิงก์ "หน้าแรก" หนึ่งครั้ง ตรวจ expect(count).toBeGreaterThan(0) แล้วจำค่าไว้ (const before = count)
+//        (หนึ่ง action อาจทำให้ handler ทำงานมากกว่า 1 ครั้ง เพราะ Playwright ตรวจก่อนลองทำและตรวจซ้ำระหว่างทาง จึงไม่ตรวจว่า count เท่ากับ 1 พอดี)
+//        แล้ว await page.removeLocatorHandler(หัวข้อ) (ต้องส่ง locator ตัวเดิมที่ใช้ตอนลงทะเบียน) hover อีกครั้ง ตรวจว่า count ยังเท่า before
 //        (ส่วนแบนเนอร์ที่บังการคลิกเมื่อไม่มี handler ดูตัวอย่างที่ 3)
 // ------------------------------------------------
 test.fixme("ถอด handler แล้ว handler ไม่ทำงานอีก", async ({ page }) => {
