@@ -13,3 +13,9 @@ docs/superpowers
 *.local.har
 lessons/50-reporters/output/
 lessons/51-ci-github-actions/output/
+# ไฟล์ที่ playwright init-agents --loop=claude สร้างนอกโฟลเดอร์บท (บท 53) และโฟลเดอร์ของ playwright cli (บท 52)
+.claude/agents/playwright-test-*.md
+.mcp.json
+specs/
+lessons/seed.spec.ts
+.playwright-cli/
