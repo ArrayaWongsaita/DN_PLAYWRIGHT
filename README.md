@@ -16,6 +16,12 @@
   ```
 
   แล้วตรวจด้วย `pnpm -v` ต้องขึ้นเลข 12.x
+
+  ถ้าใช้ Windows PowerShell แล้วขึ้นข้อความว่ารัน `pnpm.ps1` ไม่ได้ (Execution Policy บล็อกสคริปต์) ให้เปิด PowerShell แล้วรันคำสั่งนี้หนึ่งครั้ง จากนั้นเปิด terminal ใหม่:
+
+  ```powershell
+  Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+  ```
 - **VS Code + ส่วนขยาย [Playwright Test for VS Code](https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright)** (แนะนำ ใช้รัน test จากในโปรแกรมและเลือก locator ได้ ไม่ติดตั้งก็เรียนได้)
 - Git
 

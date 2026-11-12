@@ -10,7 +10,7 @@ const { LESSON_CONFIG_DIRS } = await import(pathToFileURL(path.join(root, "playw
 const extraArgs = process.argv.slice(2);
 
 /** @type {{ label: string, args: string[] }[]} */
-const runs = [{ label: "config หลัก", args: [] }];
+const runs = [{ label: "config หลัก", args: ["--pass-with-no-tests"] }];
 
 for (const dir of [...LESSON_CONFIG_DIRS].sort()) {
   const config = path.join("lessons", dir, "playwright.config.ts");
@@ -27,15 +27,17 @@ for (const dir of [...LESSON_CONFIG_DIRS].sort()) {
   }
 }
 
+// ใช้ได้ทั้ง zsh และ cmd.exe: ครอบด้วย double quote เมื่อมีอักขระพิเศษ
 function quote(arg) {
-  return /^[\w@=./:\\-]+$/.test(arg) ? arg : JSON.stringify(arg);
+  return /^[\w@=./:\\-]+$/.test(arg) ? arg : `"${arg.replaceAll('"', '\\"')}"`;
 }
 
 const results = [];
 for (const run of runs) {
   console.log(`\n=== ${run.label} ===`);
-  const args = ["exec", "playwright", "test", "--pass-with-no-tests", ...run.args, ...extraArgs];
-  const r = spawnSync("pnpm", args.map(quote), { cwd: root, stdio: "inherit", shell: true });
+  const args = ["exec", "playwright", "test", ...run.args, ...extraArgs];
+  // ส่งเป็นสตริงเดียว เพื่อไม่ให้ Node 24 เตือน DEP0190 (shell: true + args array)
+  const r = spawnSync(`pnpm ${args.map(quote).join(" ")}`, { cwd: root, stdio: "inherit", shell: true });
   results.push({ label: run.label, ok: r.status === 0 });
 }
 
