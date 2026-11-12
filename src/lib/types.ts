@@ -1,0 +1,13 @@
+export type CategoryId = "it" | "fashion" | "home" | "books";
+export type Product = { id: string; name: string; category: CategoryId; price: number; stock: number; featured: boolean; description: string; image: string };
+export type Role = "user" | "admin";
+export type User = { id: string; name: string; email: string; password: string; role: Role };
+export type PublicUser = Omit<User, "password">;
+export type CartItem = { productId: string; quantity: number };
+export type CartLine = { productId: string; name: string; price: number; quantity: number; lineTotal: number };
+export type CartSummary = { items: CartLine[]; count: number; subtotal: number; discount: number; total: number; coupon: string | null };
+export type ShippingMethod = "standard" | "express";
+export type PaymentMethod = "card" | "transfer" | "cod";
+export type Customer = { name: string; address: string; phone: string };
+export type Order = { id: string; items: CartLine[]; subtotal: number; discount: number; shippingFee: number; total: number; shipping: ShippingMethod; payment: PaymentMethod; customer: Customer; createdAt: string };
+export type SessionData = { products: Product[]; cart: CartItem[]; coupon: string | null; orders: Order[]; nextOrderNo: number; users: User[]; avatarFileName: string | null; lastSeen: number };
