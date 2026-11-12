@@ -51,8 +51,17 @@ test("หน้าแรกไม่มีปัญหา accessibility ที�
 //        ปุ่ม "เข้าสู่ระบบ" (getByRole("button", ...)) ตรวจ toHaveRole("button")
 //        (เหมือนตัวอย่างที่ 1 แต่ใช้กับฟอร์ม)
 // ------------------------------------------------
-test.fixme("ช่องกรอกและปุ่มในฟอร์มเข้าสู่ระบบมี role และชื่อถูกต้อง", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("ช่องกรอกและปุ่มในฟอร์มเข้าสู่ระบบมี role และชื่อถูกต้อง", async ({ page }) => {
+  await page.goto("/login");
+
+  const email = page.getByLabel("อีเมล");
+  const password = page.getByLabel("รหัสผ่าน");
+  // getByLabel หาช่องจากชื่อ แล้ว toHaveAccessibleName ยืนยันว่าชื่อที่โปรแกรมอ่านหน้าจอได้ก็คือชื่อนั้นจริง
+  await expect(email).toHaveRole("textbox");
+  await expect(email).toHaveAccessibleName("อีเมล");
+  await expect(password).toHaveAccessibleName("รหัสผ่าน");
+
+  await expect(page.getByRole("button", { name: "เข้าสู่ระบบ" })).toHaveRole("button");
 });
 
 
@@ -62,8 +71,14 @@ test.fixme("ช่องกรอกและปุ่มในฟอร์ม�
 //        ตรวจ toHaveAccessibleName("รหัสผ่าน") และ toHaveAccessibleDescription("อย่างน้อย 8 ตัวอักษร")
 //        คำอธิบายมาจาก aria-describedby ที่ชี้ไป <small> ใต้ช่อง
 // ------------------------------------------------
-test.fixme("ช่องรหัสผ่านมีคำอธิบายว่าอย่างน้อย 8 ตัวอักษร", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("ช่องรหัสผ่านมีคำอธิบายว่าอย่างน้อย 8 ตัวอักษร", async ({ page }) => {
+  await page.goto("/register");
+
+  // exact: true เพราะ "ยืนยันรหัสผ่าน" ก็มีคำว่า "รหัสผ่าน" อยู่ในชื่อ ถ้าไม่ใส่จะตรงสองช่อง
+  const password = page.getByLabel("รหัสผ่าน", { exact: true });
+  await expect(password).toHaveAccessibleName("รหัสผ่าน");
+  // คำอธิบายมาจาก aria-describedby="password-hint" ที่ชี้ไปหา <small> ใต้ช่อง
+  await expect(password).toHaveAccessibleDescription("อย่างน้อย 8 ตัวอักษร");
 });
 
 
@@ -74,8 +89,15 @@ test.fixme("ช่องรหัสผ่านมีคำอธิบาย�
 //        แล้ว toEqual ให้ตรงกับ 4 ข้อ: "button-name", "color-contrast", "image-alt", "label"
 //        (id เหล่านี้ได้จากการรันจริงบนหน้านี้ ดูคำอธิบายแต่ละข้อใน README)
 // ------------------------------------------------
-test.fixme("หน้า playground a11y ถูกตรวจเจอปัญหาตามที่ตั้งใจไว้", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า playground a11y ถูกตรวจเจอปัญหาตามที่ตั้งใจไว้", async ({ page }) => {
+  await page.goto("/playground/a11y");
+  await expect(page.getByRole("heading", { name: "หน้านี้มีปัญหา accessibility โดยตั้งใจ", level: 1 })).toBeVisible();
+
+  const results = await new AxeBuilder({ page }).analyze();
+
+  // เทียบเฉพาะ id ของกฎ (ไม่เทียบทั้งก้อน เพราะรายละเอียดอย่าง HTML และข้อความอธิบายเปลี่ยนตามเวอร์ชันของ axe)
+  // .sort() ให้ลำดับแน่นอน ไม่ขึ้นกับลำดับที่ axe คืนมา
+  expect(results.violations.map((v) => v.id).sort()).toEqual(["button-name", "color-contrast", "image-alt", "label"]);
 });
 
 
@@ -86,6 +108,18 @@ test.fixme("หน้า playground a11y ถูกตรวจเจอปัญ
 //        include รับ selector ของส่วนที่จะตรวจ (นี่คือ API ของ axe ไม่ใช่การหา locator ของ Playwright)
 //        ผลต้องเป็น [] เหมือนกัน
 // ------------------------------------------------
-test.fixme("หน้าสินค้าผ่าน axe และหน้าเข้าสู่ระบบผ่าน axe เฉพาะส่วน main", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้าสินค้าผ่าน axe และหน้าเข้าสู่ระบบผ่าน axe เฉพาะส่วน main", async ({ page }) => {
+  await page.goto("/products");
+  // รอ heading และรายการสินค้าก่อนตรวจ เพราะ /products โหลดรายการสินค้าภายหลัง
+  // ถ้าตรวจตอนยังเป็นข้อความ "กำลังโหลดสินค้า..." จะไม่ได้ตรวจการ์ดสินค้าเลย
+  await expect(page.getByRole("heading", { name: "สินค้าทั้งหมด" })).toBeVisible();
+  await expect(page.getByRole("img").first()).toBeVisible();
+  const productsResults = await new AxeBuilder({ page }).analyze();
+  expect(productsResults.violations).toEqual([]);
+
+  await page.goto("/login");
+  await expect(page.getByRole("heading", { name: "เข้าสู่ระบบ", level: 1 })).toBeVisible();
+  // include("main") จำกัดการตรวจเฉพาะส่วนนั้น (เป็น selector ของ axe ไม่ใช่ locator ของ Playwright)
+  const loginResults = await new AxeBuilder({ page }).include("main").analyze();
+  expect(loginResults.violations).toEqual([]);
 });

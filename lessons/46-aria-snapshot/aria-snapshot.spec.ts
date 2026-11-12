@@ -53,8 +53,20 @@ test("ฟอร์มเข้าสู่ระบบมีช่องกร�
 //        เขียน template: node "contentinfo" ที่มีลิงก์ "สาขาของเรา" และ "Playground" (ย่อหน้าซ้อนใน paragraph)
 //        ถ้าไม่รู้โครงสร้าง ให้ลอง console.log(await footer.ariaSnapshot()) ดูก่อน
 // ------------------------------------------------
-test.fixme("ส่วนท้ายหน้ามีลิงก์สาขาของเราและ Playground", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("ส่วนท้ายหน้ามีลิงก์สาขาของเราและ Playground", async ({ page }) => {
+  await page.goto("/");
+  // <footer> ที่อยู่ใน body โดยตรงมี role contentinfo
+  const footer = page.getByRole("contentinfo");
+  await expect(footer.getByRole("link", { name: "Playground" })).toBeVisible();
+
+  // ลิงก์ทั้งสองอยู่ใน <p> เดียวกัน จึงซ้อนอยู่ใต้ paragraph
+  // ข้ามข้อความลิขสิทธิ์และเครื่องหมาย "·" ไปเลย เพราะไม่ใช่สิ่งที่ต้องการเฝ้า (template เทียบแบบบางส่วน)
+  await expect(footer).toMatchAriaSnapshot(`
+    - contentinfo:
+      - paragraph:
+        - link "สาขาของเรา"
+        - link "Playground"
+  `);
 });
 
 
@@ -65,8 +77,21 @@ test.fixme("ส่วนท้ายหน้ามีลิงก์สาข�
 //        ปุ่ม "เข้าสู่ระบบ" ไม่ disabled แล้ว (เขียนแค่ - button "เข้าสู่ระบบ")
 //        ก่อนตรวจ snapshot ให้ expect(ปุ่ม).toBeEnabled() เพื่อให้แน่ใจว่ากรอกครบแล้ว
 // ------------------------------------------------
-test.fixme("ฟอร์มเข้าสู่ระบบหลังกรอกแสดงค่าที่กรอก", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("ฟอร์มเข้าสู่ระบบหลังกรอกแสดงค่าที่กรอก", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("อีเมล").fill("somchai@example.com");
+  await page.getByLabel("รหัสผ่าน").fill("secret123");
+  // ปุ่ม enabled ก็ต่อเมื่อ state ของฟอร์มได้ค่าทั้งสองช่องแล้ว จึงเป็นตัวบอกว่ากรอกครบจริง ก่อนตรวจ snapshot
+  await expect(page.getByRole("button", { name: "เข้าสู่ระบบ" })).toBeEnabled();
+
+  // ช่องกรอกแสดงค่าต่อท้ายหลัง ":" ส่วนปุ่มไม่มี [disabled] แล้ว
+  // (template ไม่เขียน [disabled] ก็จริง แต่ที่ยืนยันว่าปุ่ม enabled คือ toBeEnabled ด้านบน)
+  await expect(page.getByRole("main")).toMatchAriaSnapshot(`
+    - main:
+      - textbox "อีเมล": somchai@example.com
+      - textbox "รหัสผ่าน": secret123
+      - button "เข้าสู่ระบบ"
+  `);
 });
 
 
@@ -77,6 +102,18 @@ test.fixme("ฟอร์มเข้าสู่ระบบหลังกร�
 //        มี checkbox "อุปกรณ์ไอที", "เสื้อผ้า", "ของใช้ในบ้าน" (ยังไม่ติ๊ก) และ "หนังสือ" ที่มี [checked]
 //        ลองรัน aria snapshot ของ group (ariaSnapshot()) เพื่อดูว่า checkbox แต่ละอันเขียนยังไง
 // ------------------------------------------------
-test.fixme("ติ๊กหมวดหนังสือแล้ว snapshot แสดงว่า checked", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("ติ๊กหมวดหนังสือแล้ว snapshot แสดงว่า checked", async ({ page }) => {
+  await page.goto("/register");
+  // fieldset ที่มี legend "หมวดที่สนใจ" ได้ role group และชื่อจาก legend
+  const group = page.getByRole("group", { name: "หมวดที่สนใจ" });
+  await group.getByRole("checkbox", { name: "หนังสือ" }).check();
+
+  // อันที่ไม่ได้ติ๊กไม่ต้องเขียน attribute ส่วนอันที่ติ๊กแล้วเขียน [checked]
+  await expect(group).toMatchAriaSnapshot(`
+    - group "หมวดที่สนใจ":
+      - checkbox "อุปกรณ์ไอที"
+      - checkbox "เสื้อผ้า"
+      - checkbox "ของใช้ในบ้าน"
+      - checkbox "หนังสือ" [checked]
+  `);
 });
