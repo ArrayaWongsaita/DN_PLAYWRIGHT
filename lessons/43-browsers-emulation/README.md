@@ -1,6 +1,6 @@
 # บทที่ 43: หลาย browser และการจำลองสภาพแวดล้อม (emulation)
 
-บทนี้เขียนให้อ่านเองได้ ผู้เขียนรันตัวอย่างและเฉลยทุกข้อจริงบน chromium, webkit และ Mobile Safari แล้ว ส่วน firefox ผู้เขียนไม่ได้รัน (อธิบายในหัวข้อ 10) ลองรันแล้วแก้ค่าเล่นดูระหว่างอ่าน
+บทนี้เขียนให้อ่านเองได้ ตัวอย่างและเฉลยในบทนี้ครอบคลุม chromium, webkit และ Mobile Safari ส่วน firefox มีคำอธิบายแยกในหัวข้อ 10 ลองรันแล้วแก้ค่าเล่นดูระหว่างอ่าน
 
 ## จบบทนี้แล้วทำอะไรได้
 
@@ -73,7 +73,7 @@ test.describe("โหมดมืด", () => {
 });
 ```
 
-`colorScheme: "dark"` ทำให้ `prefers-color-scheme: dark` เป็นจริง แอปจึงเปลี่ยนสี `toHaveCSS` ตรวจค่า style ที่ browser คำนวณแล้ว (ตอน light คือ `rgb(255, 255, 255)`) ผู้เขียนรันตัวอย่างนี้ผ่านบน chromium, webkit และ Mobile Safari (firefox ไม่ได้รัน)
+`colorScheme: "dark"` ทำให้ `prefers-color-scheme: dark` เป็นจริง แอปจึงเปลี่ยนสี `toHaveCSS` ตรวจค่า style ที่ browser คำนวณแล้ว (ตอน light คือ `rgb(255, 255, 255)`) ตัวอย่างนี้ใช้ได้บน chromium, webkit และ Mobile Safari
 
 ### 5. ตัวอย่างที่ 2: fixture isMobile ให้ test เดียวใช้ได้ทุก project
 
@@ -100,9 +100,9 @@ test.use({
 });
 ```
 
-`geolocation` กำหนดพิกัดที่ browser จะตอบ ส่วน `permissions` คืออนุญาตสิทธิ์ให้เว็บ ผู้เขียนลองตั้งแค่ `geolocation` ไม่ใส่ `permissions` ใน chromium และ webkit แล้วเว็บแสดง `role="alert"` "ไม่ได้รับอนุญาตให้เข้าถึงตำแหน่ง" (ถูกปฏิเสธ) เมื่อใส่ครบจึงได้ "สาขาที่ใกล้ที่สุดคือ สาขาสยาม"
+`geolocation` กำหนดพิกัดที่ browser จะตอบ ส่วน `permissions` คืออนุญาตสิทธิ์ให้เว็บ ถ้าตั้งแค่ `geolocation` ไม่ใส่ `permissions` เว็บจะแสดง `role="alert"` "ไม่ได้รับอนุญาตให้เข้าถึงตำแหน่ง" (ถูกปฏิเสธ) เมื่อใส่ครบจึงจะได้ "สาขาที่ใกล้ที่สุดคือ สาขาสยาม"
 
-> หมายเหตุ: ตัวอย่างโหมดมืด, geolocation และออฟไลน์ ผู้เขียนยืนยันบน chromium และ webkit (รวม Mobile Safari) เท่านั้น ไม่ได้รันบน firefox
+> หมายเหตุ: ตัวอย่างโหมดมืด, geolocation และออฟไลน์ ใช้ได้บน chromium และ webkit (รวม Mobile Safari) ส่วน firefox ดูหัวข้อ 10
 
 ### 7. เขตเวลา และ page.clock
 
@@ -119,7 +119,7 @@ test("...", async ({ page }) => {
 
 - `page.clock.install({ time })` ตั้งเวลาปลอมของหน้า ต้องเรียกก่อน `goto` เพื่อให้โค้ดของหน้าเห็นเวลาปลอมตั้งแต่เริ่ม (บท 31)
 - `new Date("2026-06-01T01:00:00Z")` คือ 01:00 UTC เป็นเวลาที่ตรงกันทั่วโลก แต่ "ชั่วโมงบนนาฬิกา" ต่างกันตามเขตเวลา: `Asia/Bangkok` (UTC+7) เป็น 08:00 จึง "ตอนเช้า" ส่วน `America/New_York` เป็น 21:00 ของวันก่อน (ตั้งวันที่ในฤดูร้อนที่เขตนี้เป็น UTC-4) จึง "ตอนเย็น"
-- ผู้เขียนรันสองเขตเวลานี้ผ่านบน chromium, webkit และ Mobile Safari
+- สองเขตเวลานี้ใช้ได้บน chromium, webkit และ Mobile Safari
 
 ### 8. locale: วันที่เปลี่ยนภาษา
 
@@ -132,11 +132,11 @@ await context.setOffline(true);
 await expect(page.getByRole("status").filter({ hasText: "ไม่มีการเชื่อมต่ออินเทอร์เน็ต" })).toBeVisible();
 ```
 
-`setOffline` เป็นของ `context` (ไม่ใช่ `page`) ตอนออฟไลน์ browser ยิง event `offline` แอปจึงแสดงแถบแจ้งเตือน และเมื่อเรียก `setOffline(false)` แถบนี้หาย ผู้เขียนลองแล้วได้ผลเหมือนกันบน chromium และ webkit (ยืนยันเฉพาะสองตัวนี้ ไม่ได้รันบน firefox) ให้ `goto` ให้เสร็จก่อนค่อยออฟไลน์ เพราะ `goto` ตอนออฟไลน์ไม่ได้หน้า
+`setOffline` เป็นของ `context` (ไม่ใช่ `page`) ตอนออฟไลน์ browser ยิง event `offline` แอปจึงแสดงแถบแจ้งเตือน และเมื่อเรียก `setOffline(false)` แถบนี้หาย ได้ผลเหมือนกันบน chromium และ webkit ให้ `goto` ให้เสร็จก่อนค่อยออฟไลน์ เพราะ `goto` ตอนออฟไลน์ไม่ได้หน้า
 
 ### 10. ถ้า firefox รันไม่ขึ้น
 
-ผู้เขียนไม่ได้รัน test ของบทนี้บน firefox (เครื่องที่ใช้เขียนเปิด firefox ไม่ขึ้น) ผลที่ยืนยันแล้วจึงมีเฉพาะ chromium, webkit และ Mobile Safari ส่วน firefox ให้ถือว่ายังไม่ได้ยืนยัน (จะตรวจบน CI หรือเครื่องอื่นภายหลัง)
+ถ้า firefox บนเครื่องคุณรันไม่ขึ้น (เช่น เปิด browser ไม่ได้หรือยังไม่ได้ติดตั้ง) ให้รันเฉพาะ project อื่นตามคำสั่งด้านล่าง และถือว่าผลของ firefox ยังไม่ได้ตรวจ ให้ลองบนเครื่องอื่นหรือบน CI
 
 ถ้า firefox บนเครื่องคุณรันไม่ขึ้น ลองตามลำดับ:
 
@@ -175,7 +175,7 @@ pnpm test --config lessons/43-browsers-emulation/playwright.config.ts
 
 ผลที่ควรได้ก่อนเริ่มทำแบบฝึกหัด เมื่อทั้ง 4 project เปิดได้: `8 passed` และ `24 skipped` (ตัวอย่าง 2 ข้อ x 4 project และแบบฝึกหัด 6 test x 4 project)
 
-ถ้า firefox รันไม่ขึ้น ให้รันเฉพาะ project อื่น (เครื่องผู้เขียนรันคำสั่งนี้ใน zsh ผ่าน ส่วน PowerShell 5.1 ไม่ได้ลองรันจริง แต่เครื่องหมาย `'` ครอบ argument ใน PowerShell ส่งค่าตรงตัว และเลี่ยงช่องว่างในชื่อ `Mobile Safari` ด้วยเครื่องหมาย `*`):
+ถ้า firefox บนเครื่องคุณรันไม่ขึ้น ให้รันเฉพาะ project อื่น (คำสั่งนี้ใช้ได้ทั้งใน zsh และ PowerShell เครื่องหมาย `'` ครอบ argument ส่งค่าตรงตัว และเลี่ยงช่องว่างในชื่อ `Mobile Safari` ด้วยเครื่องหมาย `*`):
 
 ```bash
 pnpm test --config lessons/43-browsers-emulation/playwright.config.ts '--project=chromium' '--project=webkit' '--project=Mobile*'

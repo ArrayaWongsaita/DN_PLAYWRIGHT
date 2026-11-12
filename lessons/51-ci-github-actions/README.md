@@ -81,7 +81,7 @@ strategy:
 
 GitHub จะเปิด job สองตัวพร้อมกัน ตัวแรก `matrix.shard` เป็น 1 ตัวที่สองเป็น 2 คำสั่ง `--shard=${{ matrix.shard }}/2` จึงกลายเป็น `--shard=1/2` กับ `--shard=2/2` ตามลำดับ (ส่วน `/2` ต้องตรงกับจำนวนค่าใน matrix) `fail-fast: false` ให้ shard อื่นรันต่อแม้มี shard หนึ่งล้ม
 
-> หมายเหตุ: นี่คือการแบ่งแบบง่ายที่สุด ผลคือได้รายงาน html แยกต่อ shard (artifact สองอัน) ถ้าอยากได้รายงานรวมชิ้นเดียว Playwright มี reporter `blob` และคำสั่ง `merge-reports` ที่อธิบายในเอกสาร sharding (บทนี้ไม่ได้ลองรัน)
+> หมายเหตุ: นี่คือการแบ่งแบบง่ายที่สุด ผลคือได้รายงาน html แยกต่อ shard (artifact สองอัน) ถ้าอยากได้รายงานรวมชิ้นเดียว Playwright มี reporter `blob` และคำสั่ง `merge-reports` ที่อธิบายในเอกสาร sharding
 
 ### 5. ข้อควรรู้เรื่อง CI
 

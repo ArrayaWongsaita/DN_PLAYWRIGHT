@@ -90,7 +90,7 @@ export default async function globalSetup() {
 - `request.newContext({ baseURL })` สร้าง API client ที่ไม่ต้องมี browser (`request` import จาก `@playwright/test`) ใช้ method `post` แบบเดียวกับ `page.request` ในบท 37 และเก็บ cookie ที่ server ส่งกลับให้เอง
 - `api.storageState()` คืน object ของ cookie ที่ได้ (เหมือน `context.storageState()` ในบท 41) ที่นี่เรากรอง `dn_sid` (ตะกร้า) ออกก่อนเขียนไฟล์ เหตุผลเดียวกับบท 41: ให้ทุก test ได้ตะกร้าใหม่ของตัวเอง
 - อย่าลืม `await api.dispose()` เพื่อปิด client
-- ถ้า login ไม่สำเร็จเราโยน error ให้การรันหยุดพร้อมข้อความที่บอกสาเหตุ (ผู้เขียนลองใส่รหัสผ่านผิดใน `.env` แล้วเห็น `Error: login ใน global-setup ไม่สำเร็จ: status 401` และไม่มี test ถูกรัน)
+- ถ้า login ไม่สำเร็จเราโยน error ให้การรันหยุดพร้อมข้อความที่บอกสาเหตุ (เช่น ใส่รหัสผ่านผิดใน `.env` จะเห็น `Error: login ใน global-setup ไม่สำเร็จ: status 401` และไม่มี test ถูกรัน)
 - baseURL มาจาก `playwright.shared.ts` เพราะ global-setup ไม่มี fixture `baseURL` ให้ใช้ และ **webServer ถูกเปิดก่อนรัน globalSetup** (เห็นจากผลรันจริง: login ผ่านโดยที่เราไม่ได้เปิดแอปเอง)
 
 ### 4. globalTeardown
@@ -148,7 +148,7 @@ Windows (PowerShell):
 Copy-Item lessons/49-global-setup-env/.env.example lessons/49-global-setup-env/.env
 ```
 
-แล้วเปิดไฟล์ `.env` แก้ค่าได้ เช่นเปลี่ยนเป็นบัญชี admin (`admin@dnshop.test` / `admin123`) แล้วรันใหม่ จะเห็นบรรทัด `[global-setup]` ขึ้นอีเมลใหม่ (ผู้เขียนทดสอบวิธี `cp` บน macOS ส่วน `Copy-Item` เป็นคำสั่งมาตรฐานของ PowerShell ผู้เขียนไม่ได้ทดสอบบน Windows) ลบไฟล์ `.env` เมื่อลองเสร็จเพื่อกลับไปใช้ค่า fallback
+แล้วเปิดไฟล์ `.env` แก้ค่าได้ เช่นเปลี่ยนเป็นบัญชี admin (`admin@dnshop.test` / `admin123`) แล้วรันใหม่ จะเห็นบรรทัด `[global-setup]` ขึ้นอีเมลใหม่ ลบไฟล์ `.env` เมื่อลองเสร็จเพื่อกลับไปใช้ค่า fallback
 
 ## แบบฝึกหัดในบทนี้
 

@@ -1,6 +1,6 @@
 # บทที่ 44: ถ่ายภาพหน้าจอและอัดวิดีโอ
 
-บทนี้เขียนให้อ่านเองได้ ผู้เขียนรันตัวอย่างและเฉลยทุกข้อจริงบน chromium แล้วเปิดดูไฟล์ที่ได้ใน `test-results/` ลองรันและเปิดไฟล์ดูไปพร้อมกับอ่าน
+บทนี้เขียนให้อ่านเองได้ ตัวอย่างและเฉลยในบทนี้รันบน chromium ลองรันแล้วเปิดไฟล์ที่ได้ใน `test-results/` ดูไปพร้อมกับอ่าน
 
 ## จบบทนี้แล้วทำอะไรได้
 
@@ -55,7 +55,7 @@ await testInfo.attach("เมนูหลัก", { body: buffer, contentType: "
 
 ### 5. ตัวอย่างที่ 1 และ 2 ในไฟล์
 
-ตัวอย่างที่ 1 ถ่ายทั้งหน้าแรกลงไฟล์ ตรวจว่าไฟล์ไม่ว่าง แล้วแนบเข้ารายงาน ตัวอย่างที่ 2 ถ่ายเฉพาะเมนูหลักเป็น `Buffer` แล้วแนบด้วย `body` ผู้เขียนรันแล้วเห็นไฟล์ `home-full.png` ใต้ `test-results/` ของ test นั้นจริง
+ตัวอย่างที่ 1 ถ่ายทั้งหน้าแรกลงไฟล์ ตรวจว่าไฟล์ไม่ว่าง แล้วแนบเข้ารายงาน ตัวอย่างที่ 2 ถ่ายเฉพาะเมนูหลักเป็น `Buffer` แล้วแนบด้วย `body` เมื่อรันจะเห็นไฟล์ `home-full.png` ใต้ `test-results/` ของ test นั้น
 
 ### 6. อัดวิดีโอด้วย test.use({ video: "on" })
 
@@ -65,9 +65,9 @@ await testInfo.attach("เมนูหลัก", { body: buffer, contentType: "
 test.use({ video: "on" });
 ```
 
-ทำให้ทุก test ในไฟล์อัดวิดีโอ ได้ไฟล์ `video.webm` ในโฟลเดอร์ของ test นั้นใต้ `test-results/` (ผู้เขียนเปิดดูโฟลเดอร์แล้วเห็นไฟล์จริงทั้งของ test ที่ผ่าน) สิ่งที่ต้องรู้:
+ทำให้ทุก test ในไฟล์อัดวิดีโอ ได้ไฟล์ `video.webm` ในโฟลเดอร์ของ test นั้นใต้ `test-results/` (ได้ไฟล์แม้ test จะผ่าน) สิ่งที่ต้องรู้:
 
-- **`video` ตั้งได้เฉพาะระดับบนสุดของไฟล์หรือใน config** ถ้าใส่ใน `test.describe` Playwright จะ error ว่า `Cannot use({ video }) in a describe group, because it forces a new worker` (ผู้เขียนเจอข้อความนี้จริงตอนลองเขียน) เหตุผลคือการอัดวิดีโอต้องเริ่มตั้งแต่สร้าง browser context
+- **`video` ตั้งได้เฉพาะระดับบนสุดของไฟล์หรือใน config** ถ้าใส่ใน `test.describe` Playwright จะ error ว่า `Cannot use({ video }) in a describe group, because it forces a new worker` เหตุผลคือการอัดวิดีโอต้องเริ่มตั้งแต่สร้าง browser context
 - ไฟล์วิดีโอเขียนเสร็จตอน test จบและปิด page แล้ว จึงเปิดดูได้หลังรันเสร็จเท่านั้น ใน test เรียก `page.video()` ได้ (ได้ object หรือ `null` ถ้าไม่ได้อัด) แต่ยังเปิดไฟล์ไม่ได้
 - วิดีโอทำให้รันช้าลงและกินที่ จึงเปิดเฉพาะตอนต้องการดู ไม่เปิดทั้ง repo
 
@@ -81,7 +81,7 @@ test.use({ video: "on" });
 | `video` | `"off"`, `"on"`, `"retain-on-failure"`, `"on-first-retry"`, `"on-all-retries"`, `"retain-on-first-failure"`, `"retain-on-failure-and-retries"` | `"on"` อัดทุก test และเก็บไว้ทุกอัน, `"retain-on-failure"` อัดทุก test แต่เก็บเฉพาะที่ล้ม |
 | `trace` | `"off"`, `"on"`, `"retain-on-failure"`, `"on-first-retry"`, `"on-all-retries"`, `"retain-on-first-failure"`, `"retain-on-failure-and-retries"` | เหมือน video แต่ได้ไฟล์ trace เปิดด้วย trace viewer |
 
-ที่ใช้จริงบ่อยคือ `"retain-on-failure"` (ได้หลักฐานเฉพาะตอนล้ม ไม่เปลืองที่) และ `"on-first-retry"` (บน CI ที่ตั้ง retry ไว้ จะเก็บเฉพาะตอนรันซ้ำครั้งแรก) ผู้เขียนยืนยันด้วยการรันจริงเฉพาะ `video: "on"` ส่วนค่าอื่นในตารางตรวจจากไฟล์ type ของ Playwright 1.65 ใน `node_modules`
+ที่ใช้จริงบ่อยคือ `"retain-on-failure"` (ได้หลักฐานเฉพาะตอนล้ม ไม่เปลืองที่) และ `"on-first-retry"` (บน CI ที่ตั้ง retry ไว้ จะเก็บเฉพาะตอนรันซ้ำครั้งแรก) ในบทนี้ลองรันจริงเฉพาะ `video: "on"` ส่วนค่าอื่นในตารางอ้างอิงจากไฟล์ type ของ Playwright 1.65 ใน `node_modules`
 
 ## จุดที่มักพลาด
 

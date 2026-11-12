@@ -1,7 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 
 // Page Object ของหน้า /cart (เป็นโครงให้เติมในแบบฝึกหัด)
-// locator ด้านล่างเขียนไว้ให้แล้ว ส่วน method ที่โยน Error อยู่คือสิ่งที่ต้องเขียนเอง (ข้อ 2-5 ใน cart-page.spec.ts)
+// locator ด้านล่างเขียนไว้ให้แล้ว ส่วน method ที่โยน Error อยู่คือสิ่งที่ต้องเขียนเอง (ข้อ 2-5 ใน page-object.spec.ts)
 export class CartPage {
   readonly page: Page;
   readonly items: Locator;

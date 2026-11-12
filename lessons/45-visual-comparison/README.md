@@ -1,6 +1,6 @@
 # บทที่ 45: เทียบภาพหน้าจอ (visual comparison)
 
-บทนี้เขียนให้อ่านเองได้ บทนี้ต่างจากบทอื่นตรงที่ **ตัวอย่างอยู่ใน `test.fixme`** เพราะการเทียบภาพต้องมี "ภาพต้นแบบ" ก่อน และภาพต้นแบบสร้างบนเครื่องของคุณเอง ไม่ได้อยู่ใน repo ผู้เขียนรันตัวอย่างและเฉลยทุกข้อจริงบน chromium (macOS) โดยทำตามขั้นตอนในหัวข้อ "ทำทีละขั้น" ทุกขั้น
+บทนี้เขียนให้อ่านเองได้ บทนี้ต่างจากบทอื่นตรงที่ **ตัวอย่างอยู่ใน `test.fixme`** เพราะการเทียบภาพต้องมี "ภาพต้นแบบ" ก่อน และภาพต้นแบบสร้างบนเครื่องของคุณเอง ไม่ได้อยู่ใน repo ตัวอย่างและเฉลยในบทนี้ใช้ chromium (ตัวอย่างไฟล์ภาพเป็นของ macOS) ให้ทำตามขั้นตอนในหัวข้อ "ทำทีละขั้น" ทุกขั้น
 
 ## จบบทนี้แล้วทำอะไรได้
 
@@ -35,7 +35,7 @@ await expect(page).toHaveScreenshot("login.png");
 snapshotPathTemplate: "{testDir}/{testFileName}-snapshots/{arg}-{projectName}-{platform}{ext}",
 ```
 
-ตัวอย่างไฟล์ที่ได้ในเครื่องผู้เขียน: `lessons/45-visual-comparison/visual-comparison.spec.ts-snapshots/home-chromium-darwin.png` ส่วนที่แปรผันคือ `{arg}` ชื่อภาพ `{projectName}` ชื่อ project (`chromium`) และ `{platform}` ชื่อระบบปฏิบัติการ (`darwin` = macOS, `linux`, `win32` = Windows)
+ตัวอย่างไฟล์ที่ได้บน macOS: `lessons/45-visual-comparison/visual-comparison.spec.ts-snapshots/home-chromium-darwin.png` ส่วนที่แปรผันคือ `{arg}` ชื่อภาพ `{projectName}` ชื่อ project (`chromium`) และ `{platform}` ชื่อระบบปฏิบัติการ (`darwin` = macOS, `linux`, `win32` = Windows)
 
 **ทำไมต้องแยกตามระบบปฏิบัติการ:** แต่ละ OS วาดฟอนต์และขอบตัวอักษรไม่เหมือนกัน แม้ใช้ browser รุ่นเดียวกัน ภาพที่ได้จึงต่างกันเล็กน้อยทุกครั้ง ถ้าใช้ภาพต้นแบบจาก macOS ไปเทียบบน Linux (เช่น บน CI) จะล้มทั้งที่แอปไม่ได้เปลี่ยนอะไร ภาพต้นแบบจึงต้องสร้างแยกต่อ OS (และต่อ browser) ในโปรเจกต์จริงทีมมักสร้างภาพบน CI ที่เป็น OS เดียวกับที่ใช้ตรวจ แล้ว commit ภาพเหล่านั้น ส่วน repo นี้ **ไม่ commit ภาพ** (โฟลเดอร์ `*-snapshots` อยู่ใน `.gitignore`) ทุกคนสร้างภาพต้นแบบของตัวเองก่อนเทียบ ตามขั้นตอนด้านล่าง
 
@@ -48,7 +48,7 @@ expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.01 } },
 - `maxDiffPixelRatio: 0.01` คือยอมให้พิกเซลต่างกันได้ไม่เกิน 1% ของพิกเซลทั้งภาพ (ค่าเริ่มต้นคือไม่ยอมให้ต่างเลย) เหมาะกับขอบตัวอักษรที่ขยับเล็กน้อย
 - มี option อื่นที่คล้ายกัน เช่น `maxDiffPixels` (จำนวนพิกเซลแบบตรงๆ) และ `threshold` (ความต่างของสีต่อพิกเซล ระหว่าง 0 ถึง 1) บทนี้ใช้ `maxDiffPixelRatio` ตัวเดียวให้เข้าใจง่าย
 - ใส่ option ใน `toHaveScreenshot({ ... })` ตรงๆ ก็ได้ และค่าที่ใส่ใน test **ทับ** ค่าใน config (ข้อ 3 ทำแบบนี้)
-- **อย่าตั้งหลวมเกินไป:** ตอนผู้เขียนทดลอง การเปลี่ยนสีหัวข้อ h1 เป็นสีแดงอย่างเดียวบนหน้า `/login` ไม่ทำให้ test ล้ม เพราะพิกเซลที่เปลี่ยนน้อยกว่า 1% ของภาพ ความต่างเล็กๆ จะหลุดรอดได้ถ้าเกณฑ์กว้างเกินไป
+- **อย่าตั้งหลวมเกินไป:** ตัวอย่างเช่น การเปลี่ยนสีหัวข้อ h1 เป็นสีแดงอย่างเดียวบนหน้า `/login` ไม่ทำให้ test ล้ม เพราะพิกเซลที่เปลี่ยนน้อยกว่า 1% ของภาพ ความต่างเล็กๆ จะหลุดรอดได้ถ้าเกณฑ์กว้างเกินไป
 
 ### 4. mask: ซ่อนส่วนที่เปลี่ยนตลอด
 
@@ -82,7 +82,7 @@ pnpm test --config lessons/45-visual-comparison/playwright.config.ts --update-sn
 
 จะเห็นข้อความ `A snapshot doesn't exist at ... writing actual.` (บอกว่ากำลังเขียนภาพต้นแบบ) และ test ผ่าน แล้วมีไฟล์ใหม่ในโฟลเดอร์ `visual-comparison.spec.ts-snapshots/` ลองเปิดไฟล์ `home-chromium-<ระบบของคุณ>.png` ดู จะเห็นกล่องสีชมพูตรงตำแหน่งคำทักทาย วันที่ และ timer
 
-> ถ้าลืมใส่ `--update-snapshots` ในครั้งแรก test จะ **ล้ม** ด้วยข้อความ `A snapshot doesn't exist ... writing actual.` เหมือนกัน แต่ภาพต้นแบบถูกเขียนไว้แล้ว รันซ้ำอีกรอบจึงผ่าน (ผู้เขียนลองแล้ว) การใส่ `--update-snapshots` ตั้งแต่รอบแรกทำให้ไม่ต้องเห็นสีแดงโดยไม่จำเป็น
+> ถ้าลืมใส่ `--update-snapshots` ในครั้งแรก test จะ **ล้ม** ด้วยข้อความ `A snapshot doesn't exist ... writing actual.` เหมือนกัน แต่ภาพต้นแบบถูกเขียนไว้แล้ว รันซ้ำอีกรอบจึงผ่าน การใส่ `--update-snapshots` ตั้งแต่รอบแรกทำให้ไม่ต้องเห็นสีแดงโดยไม่จำเป็น
 
 **ขั้นที่ 3: รันปกติ (ไม่ใส่ flag)**
 
@@ -98,7 +98,7 @@ pnpm test --config lessons/45-visual-comparison/playwright.config.ts
 await page.addStyleTag({ content: "main { background: yellow; }" });
 ```
 
-รันปกติอีกครั้ง ตอนผู้เขียนลอง test ล้มด้วยข้อความ `expect(page).toHaveScreenshot(expected) failed` และ `... pixels (ratio ...) are different.` (ผู้เขียนได้ ratio ประมาณ 0.44 บนหน้านี้ ของคุณอาจต่างเล็กน้อย) ท้ายข้อความ error บอกที่อยู่ไฟล์สามภาพ: `Expected` (ภาพต้นแบบ), `Received` (ภาพที่ถ่ายได้ตอนนี้, ไฟล์ `home-actual.png`) และ `Diff` (ภาพที่ไฮไลต์จุดที่ต่าง, ไฟล์ `home-diff.png`) ไฟล์ actual/diff อยู่ใน `test-results/`
+รันปกติอีกครั้ง test จะล้มด้วยข้อความ `expect(page).toHaveScreenshot(expected) failed` และ `... pixels (ratio ...) are different.` (บนหน้านี้ ratio อยู่ราว 0.44 ของคุณอาจต่างเล็กน้อย) ท้ายข้อความ error บอกที่อยู่ไฟล์สามภาพ: `Expected` (ภาพต้นแบบ), `Received` (ภาพที่ถ่ายได้ตอนนี้, ไฟล์ `home-actual.png`) และ `Diff` (ภาพที่ไฮไลต์จุดที่ต่าง, ไฟล์ `home-diff.png`) ไฟล์ actual/diff อยู่ใน `test-results/`
 
 **ขั้นที่ 5: ดูใน report** เปิดรายงาน HTML:
 
