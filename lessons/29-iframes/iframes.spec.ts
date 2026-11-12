@@ -54,8 +54,14 @@ test("หน้า iframe: ใช้ getByTitle กับ contentFrame ได้
 // ข้อ 1: เหมือนตัวอย่างที่ 1 แต่ตรวจเพิ่มว่าข้างใน iframe มีหัวข้อระดับ 1 "ช่วยเหลือ" ก่อนกดปุ่ม
 // แนวทาง: ใช้ frameLocator เหมือนตัวอย่างที่ 1 แล้ว expect(chat.getByRole("heading", ...)).toBeVisible() ก่อนกด "เริ่มแชท"
 // ------------------------------------------------
-test.fixme("หน้า iframe: เห็นหัวข้อช่วยเหลือในกล่องแชทก่อนกดเริ่มแชท", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า iframe: เห็นหัวข้อช่วยเหลือในกล่องแชทก่อนกดเริ่มแชท", async ({ page }) => {
+  await page.goto("/playground/iframe");
+  const chat = page.frameLocator('iframe[title="กล่องแชทช่วยเหลือ"]');
+
+  // ปุ่มและหัวข้ออยู่ใน iframe ต้องหาผ่าน frameLocator ถ้าใช้ page.getByRole จะหาไม่เจอ
+  await expect(chat.getByRole("heading", { level: 1, name: "ช่วยเหลือ" })).toBeVisible();
+  await chat.getByRole("button", { name: "เริ่มแชท" }).click();
+  await expect(chat.getByText("เจ้าหน้าที่จะตอบกลับภายใน 5 นาที")).toBeVisible();
 });
 
 
@@ -63,8 +69,16 @@ test.fixme("หน้า iframe: เห็นหัวข้อช่วยเ�
 // ข้อ 2: ตรวจว่า "ก่อนกด" ยังไม่มีข้อความตอบกลับ และ "หลังกด" มีข้อความตอบกลับ ใช้ getByTitle(...).contentFrame()
 // แนวทาง: expect(...).toBeHidden() ก่อนกด (ข้อความยังไม่ถูก render จึง hidden) แล้วกด "เริ่มแชท" และ expect(...).toBeVisible()
 // ------------------------------------------------
-test.fixme("หน้า iframe: ข้อความตอบกลับโผล่หลังกดเริ่มแชทเท่านั้น", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า iframe: ข้อความตอบกลับโผล่หลังกดเริ่มแชทเท่านั้น", async ({ page }) => {
+  await page.goto("/playground/iframe");
+  const chat = page.getByTitle("กล่องแชทช่วยเหลือ").contentFrame();
+
+  // ข้อความยังไม่ถูก render ก่อนกด จึงเป็น hidden (toBeHidden ผ่านทั้งกรณีไม่มี element และ element ถูกซ่อน)
+  const reply = chat.getByText("เจ้าหน้าที่จะตอบกลับภายใน 5 นาที");
+  await expect(reply).toBeHidden();
+
+  await chat.getByRole("button", { name: "เริ่มแชท" }).click();
+  await expect(reply).toBeVisible();
 });
 
 
@@ -75,8 +89,19 @@ test.fixme("หน้า iframe: ข้อความตอบกลับโ�
 //        แล้วกด "ยืนยันบัตร" และตรวจ alert ใน iframe ด้วย getByRole("alert").filter({ hasText: "บัตรไม่ถูกต้อง" })
 //        (ในหน้า iframe ก็มี route announcer ว่างๆ ของ Next.js เหมือนหน้าหลัก จึงต้อง filter ตามข้อความ)
 // ------------------------------------------------
-test.fixme("หน้า checkout: บัตรที่ไม่ถูกต้องแสดง บัตรไม่ถูกต้อง", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า checkout: บัตรที่ไม่ถูกต้องแสดง บัตรไม่ถูกต้อง", async ({ page }) => {
+  // ต้องมีของในตะกร้าก่อน ไม่งั้น /checkout จะเด้งไป /cart
+  await addFirstProductToCart(page);
+  await page.goto("/checkout");
+
+  const card = page.frameLocator('iframe[title="ฟอร์มบัตรเครดิต"]');
+  await card.getByLabel("หมายเลขบัตร").fill("1234");
+  await card.getByLabel("วันหมดอายุ").fill("12/30");
+  await card.getByLabel("CVV").fill("123");
+  await card.getByRole("button", { name: "ยืนยันบัตร" }).click();
+
+  // iframe ก็มี route announcer ว่างๆ ของ Next.js (role=alert) ด้วย จึงต้อง filter ตามข้อความ ไม่งั้น strict mode violation
+  await expect(card.getByRole("alert").filter({ hasText: "บัตรไม่ถูกต้อง" })).toBeVisible();
 });
 
 
@@ -85,8 +110,19 @@ test.fixme("หน้า checkout: บัตรที่ไม่ถูกต้
 // แนวทาง: เหมือนข้อ 3 แต่ใช้ getByTitle("ฟอร์มบัตรเครดิต").contentFrame() และกรอก VALID_CARD
 //        ใน iframe ต้องเห็น "บัตรผ่านการตรวจสอบ" และหน้าหลัก (ใช้ page ปกติ) ต้องเห็น "ยืนยันบัตรแล้ว"
 // ------------------------------------------------
-test.fixme("หน้า checkout: บัตรที่ถูกต้องยืนยันได้ทั้งใน iframe และหน้าหลัก", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า checkout: บัตรที่ถูกต้องยืนยันได้ทั้งใน iframe และหน้าหลัก", async ({ page }) => {
+  await addFirstProductToCart(page);
+  await page.goto("/checkout");
+
+  const card = page.getByTitle("ฟอร์มบัตรเครดิต").contentFrame();
+  await card.getByLabel("หมายเลขบัตร").fill(VALID_CARD);
+  await card.getByLabel("วันหมดอายุ").fill("12/30");
+  await card.getByLabel("CVV").fill("123");
+  await card.getByRole("button", { name: "ยืนยันบัตร" }).click();
+
+  // ข้อความแรกอยู่ใน iframe (ใช้ card) ข้อความที่สองอยู่หน้าหลัก (ใช้ page) ฟอร์มส่งสัญญาณ postMessage ไปบอกหน้าหลัก
+  await expect(card.getByRole("status")).toHaveText("บัตรผ่านการตรวจสอบ");
+  await expect(page.getByText("ยืนยันบัตรแล้ว")).toBeVisible();
 });
 
 
@@ -96,6 +132,24 @@ test.fixme("หน้า checkout: บัตรที่ถูกต้องย
 //        แล้ว expect(ปุ่ม "ยืนยันคำสั่งซื้อ").toBeEnabled() (ยังไม่ต้องกดปุ่ม)
 //        สังเกตว่าของนอก iframe ใช้ page ได้ตามปกติ ไม่ต้องผ่าน frameLocator
 // ------------------------------------------------
-test.fixme("หน้า checkout: ครบทุกอย่างแล้วปุ่มยืนยันคำสั่งซื้อกดได้", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 5 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า checkout: ครบทุกอย่างแล้วปุ่มยืนยันคำสั่งซื้อกดได้", async ({ page }) => {
+  await addFirstProductToCart(page);
+  await page.goto("/checkout");
+
+  const card = page.getByTitle("ฟอร์มบัตรเครดิต").contentFrame();
+  await card.getByLabel("หมายเลขบัตร").fill(VALID_CARD);
+  await card.getByLabel("วันหมดอายุ").fill("12/30");
+  await card.getByLabel("CVV").fill("123");
+  await card.getByRole("button", { name: "ยืนยันบัตร" }).click();
+  // รอให้หน้าหลักรับรู้ว่าบัตรผ่านแล้ว ก่อนไปกรอกส่วนอื่น
+  await expect(page.getByText("ยืนยันบัตรแล้ว")).toBeVisible();
+
+  // ของนอก iframe ใช้ page ตามปกติ
+  await page.getByLabel("ชื่อ-นามสกุล").fill("สมชาย ใจดี");
+  await page.getByLabel("ที่อยู่").fill("1 ถนนสุขุมวิท กรุงเทพฯ");
+  await page.getByLabel("เบอร์โทรศัพท์").fill("0812345678");
+  await page.getByLabel("ฉันยอมรับเงื่อนไขการสั่งซื้อ").check();
+
+  // ปุ่มจะกดได้ก็ต่อเมื่อ ข้อมูลครบ + ติ๊กยอมรับ + บัตรผ่าน (ไม่ต้องกดจริงในข้อนี้)
+  await expect(page.getByRole("button", { name: "ยืนยันคำสั่งซื้อ" })).toBeEnabled();
 });

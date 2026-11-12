@@ -45,8 +45,14 @@ test("หน้าแรก: เวลา 13:00 ทักทายว่าส�
 // แนวทาง: install ที่ 2026-12-31T11:00:00+07:00 > goto("/") > pauseAt 2026-12-31T12:00:00+07:00
 //        หมดเวลา 23:59:59 ลบ 12:00:00 = 11 ชั่วโมง 59 นาที 59 วินาที ตรวจ timer ว่า "เหลือเวลา 11:59:59"
 // ------------------------------------------------
-test.fixme("หน้าแรก: Flash Sale เที่ยงวันเหลือเวลา 11:59:59", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้าแรก: Flash Sale เที่ยงวันเหลือเวลา 11:59:59", async ({ page }) => {
+  // เริ่มก่อนเวลาเป้าหมาย 1 ชั่วโมงให้หน้าโหลดตามปกติ แล้ว pauseAt ไปเที่ยงวันตรง
+  await page.clock.install({ time: new Date("2026-12-31T11:00:00+07:00") });
+  await page.goto("/");
+  await page.clock.pauseAt(new Date("2026-12-31T12:00:00+07:00"));
+
+  // 23:59:59 - 12:00:00 = 11 ชั่วโมง 59 นาที 59 วินาที
+  await expect(page.getByRole("timer", { name: "เวลาที่เหลือ" })).toHaveText("เหลือเวลา 11:59:59");
 });
 
 
@@ -56,8 +62,17 @@ test.fixme("หน้าแรก: Flash Sale เที่ยงวันเห�
 //        ("00:10" = 10 วินาที ใส่ตัวเลขมิลลิวินาทีเป็น 10000 ก็ได้) ตรวจว่าเหลือ "เหลือเวลา 00:59:49"
 //        runFor เดินเวลาไปทีละนิดและรัน setInterval ของหน้าทุกครั้งที่ถึงเวลา (10 วินาที = 10 ครั้ง)
 // ------------------------------------------------
-test.fixme("หน้าแรก: เวลาเดินไป 10 วินาที ตัวนับลดลง 10", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้าแรก: เวลาเดินไป 10 วินาที ตัวนับลดลง 10", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-12-31T22:00:00+07:00") });
+  await page.goto("/");
+  await page.clock.pauseAt(new Date("2026-12-31T23:00:00+07:00"));
+
+  const timer = page.getByRole("timer", { name: "เวลาที่เหลือ" });
+  await expect(timer).toHaveText("เหลือเวลา 00:59:59");
+
+  // runFor เดินเวลาไป 10 วินาทีและรัน setInterval ของหน้า (ทุก 1 วินาที) ครบทุกรอบ ตัวนับจึงลดลง 10
+  await page.clock.runFor("00:10");
+  await expect(timer).toHaveText("เหลือเวลา 00:59:49");
 });
 
 
@@ -67,8 +82,15 @@ test.fixme("หน้าแรก: เวลาเดินไป 10 วิน�
 //        ตรวจว่า timer เปลี่ยนเป็น "Flash Sale จบแล้ว" (fastForward กระโดดทีเดียว และรัน timer ที่ถึงกำหนดแล้วอย่างมากหนึ่งครั้ง)
 //        ตัวนับของหน้าอัปเดตทุก 1 วินาที จึงพอให้หน้าอัปเดตเป็นข้อความจบแล้วได้
 // ------------------------------------------------
-test.fixme("หน้าแรก: ข้ามเวลาไปหลัง Flash Sale จบ", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้าแรก: ข้ามเวลาไปหลัง Flash Sale จบ", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-12-31T23:59:50+07:00") });
+  await page.goto("/");
+
+  // กระโดดข้ามไปหลังหมดเวลา (23:59:50 + 20 วินาที = 00:00:10 ของวันใหม่)
+  // interval ของหน้าที่ถึงกำหนดแล้วถูกรัน 1 ครั้ง ซึ่งพอให้ตัวนับอ่านเวลาใหม่และเปลี่ยนข้อความ
+  await page.clock.fastForward("00:20");
+
+  await expect(page.getByRole("timer", { name: "เวลาที่เหลือ" })).toHaveText("Flash Sale จบแล้ว");
 });
 
 
@@ -77,8 +99,14 @@ test.fixme("หน้าแรก: ข้ามเวลาไปหลัง Fl
 // แนวทาง: setFixedTime(new Date("2026-11-12T08:30:00+07:00")) ก่อน goto("/") ตรวจ getByTestId("greeting") ว่า "สวัสดีตอนเช้า"
 //        และ getByTestId("today") ว่า toContainText("12 พฤศจิกายน") (วันที่แสดงเป็นปี พ.ศ. ตามภาษา th-TH ใน config จึงตรวจแค่ส่วนวันและเดือน)
 // ------------------------------------------------
-test.fixme("หน้าแรก: เช้าวันที่ 12 พฤศจิกายน ทักทายตอนเช้าและแสดงวันที่ถูก", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้าแรก: เช้าวันที่ 12 พฤศจิกายน ทักทายตอนเช้าและแสดงวันที่ถูก", async ({ page }) => {
+  // ตั้งเวลาก่อน goto เพราะหน้าอ่านเวลาตอนโหลด (+07:00 ให้ตรงกับ timezone Asia/Bangkok ของ config)
+  await page.clock.setFixedTime(new Date("2026-11-12T08:30:00+07:00"));
+  await page.goto("/");
+
+  await expect(page.getByTestId("greeting")).toHaveText("สวัสดีตอนเช้า");
+  // วันที่ออกมาเป็นปี พ.ศ. ตามภาษา th-TH จึงตรวจเฉพาะส่วนวันที่และเดือน
+  await expect(page.getByTestId("today")).toContainText("12 พฤศจิกายน");
 });
 
 
@@ -89,6 +117,21 @@ test.fixme("หน้าแรก: เช้าวันที่ 12 พฤศ�
 //        (ข้อความ: "สวัสดีตอนเช้า" / "สวัสดีตอนบ่าย" / "สวัสดีตอนเย็น")
 //        แต่ละกรณี: setFixedTime(new Date(`2026-11-12T${time}:00+07:00`)) ก่อน goto("/")
 // ------------------------------------------------
-test.fixme("หน้าแรก: คำทักทายตรงรอยต่อของช่วงเวลา", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 5 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
-});
+const boundaryCases = [
+  { time: "04:59", expected: "สวัสดีตอนเย็น" },
+  { time: "05:00", expected: "สวัสดีตอนเช้า" },
+  { time: "11:59", expected: "สวัสดีตอนเช้า" },
+  { time: "12:00", expected: "สวัสดีตอนบ่าย" },
+  { time: "16:59", expected: "สวัสดีตอนบ่าย" },
+  { time: "17:00", expected: "สวัสดีตอนเย็น" },
+];
+
+// วนลูปสร้าง test ทีละกรณี (ชื่อ test ต้องไม่ซ้ำกัน จึงใส่เวลาไว้ในชื่อ) ใช้ setFixedTime เพราะหน้าอ่านเวลาครั้งเดียวตอนโหลด
+for (const { time, expected } of boundaryCases) {
+  test(`หน้าแรก: เวลา ${time} ทักทายว่า ${expected}`, async ({ page }) => {
+    await page.clock.setFixedTime(new Date(`2026-11-12T${time}:00+07:00`));
+    await page.goto("/");
+
+    await expect(page.getByTestId("greeting")).toHaveText(expected);
+  });
+}

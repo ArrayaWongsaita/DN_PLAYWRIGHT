@@ -56,8 +56,14 @@ test("หน้า console: เก็บข้อความ log และ warn
 // แนวทาง: รอให้ dnShop พร้อมเหมือนตัวอย่างที่ 1 แล้ว await page.evaluate(() => typeof (window as DnShopWindow).dnShop?.getGreeting)
 //        ตรวจว่าได้ "function"
 // ------------------------------------------------
-test.fixme("หน้า console: dnShop.getGreeting เป็นฟังก์ชัน", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า console: dnShop.getGreeting เป็นฟังก์ชัน", async ({ page }) => {
+  await page.goto("/playground/console");
+  // รอสัญญาณพร้อม (hydrate แล้ว) ก่อน: window.dnShop ถูกสร้างหลัง mount ไม่ใช่ทันทีที่ goto จบ
+  await expect.poll(() => page.evaluate(() => (window as DnShopWindow).dnShop?.version)).toBe("1.0.0");
+
+  // typeof ใน browser ได้สตริง "function" ส่งกลับมาเป็นข้อมูลธรรมดา (ส่งตัวฟังก์ชันกลับมาตรงๆ ไม่ได้)
+  const kind = await page.evaluate(() => typeof (window as DnShopWindow).dnShop?.getGreeting);
+  expect(kind).toBe("function");
 });
 
 
@@ -67,8 +73,17 @@ test.fixme("หน้า console: dnShop.getGreeting เป็นฟังก์
 //        แล้วลองอีกอัน: ส่ง { label: "รุ่น" } แล้วคืน `${label} ${window.dnShop.version}` ตรวจว่าได้ "รุ่น 1.0.0"
 //        (รอให้ dnShop พร้อมก่อนเหมือนตัวอย่างที่ 1)
 // ------------------------------------------------
-test.fixme("หน้า console: ส่ง object เป็น argument ให้ evaluate", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า console: ส่ง object เป็น argument ให้ evaluate", async ({ page }) => {
+  await page.goto("/playground/console");
+  // รอสัญญาณพร้อม (hydrate แล้ว) ก่อน: window.dnShop ถูกสร้างหลัง mount ไม่ใช่ทันทีที่ goto จบ
+  await expect.poll(() => page.evaluate(() => (window as DnShopWindow).dnShop?.version)).toBe("1.0.0");
+
+  // ส่ง argument ได้ค่าเดียว จึงห่อหลายค่าเป็น object แล้วแตกค่าด้วย destructuring ในฟังก์ชัน
+  const sum = await page.evaluate(({ a, b }) => a + b, { a: 2, b: 3 });
+  expect(sum).toBe(5);
+
+  const text = await page.evaluate(({ label }) => `${label} ${(window as DnShopWindow).dnShop?.version}`, { label: "รุ่น" });
+  expect(text).toBe("รุ่น 1.0.0");
 });
 
 
@@ -77,8 +92,14 @@ test.fixme("หน้า console: ส่ง object เป็น argument ให�
 // แนวทาง: page.clock.setFixedTime(new Date("2026-11-12T13:00:00+07:00")) ก่อน goto("/playground/console")
 //        รอให้ dnShop พร้อม แล้ว evaluate(() => window.dnShop.getGreeting()) ตรวจว่าได้ "สวัสดีตอนบ่าย"
 // ------------------------------------------------
-test.fixme("หน้า console: getGreeting ตอนบ่ายโมงได้สวัสดีตอนบ่าย", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า console: getGreeting ตอนบ่ายโมงได้สวัสดีตอนบ่าย", async ({ page }) => {
+  // ตั้งเวลาก่อน goto (บท 31) getGreeting อ่าน new Date().getHours() ตอนเรียก ซึ่งได้เวลาปลอม 13:00 ในเวลาไทย
+  await page.clock.setFixedTime(new Date("2026-11-12T13:00:00+07:00"));
+  await page.goto("/playground/console");
+  await expect.poll(() => page.evaluate(() => (window as DnShopWindow).dnShop?.version)).toBe("1.0.0");
+
+  const greeting = await page.evaluate(() => (window as DnShopWindow).dnShop?.getGreeting());
+  expect(greeting).toBe("สวัสดีตอนบ่าย");
 });
 
 
@@ -88,8 +109,18 @@ test.fixme("หน้า console: getGreeting ตอนบ่ายโมงไ�
 //        const warnPromise = page.waitForEvent("console", (msg) => msg.type() === "warning")
 //        กดปุ่ม "เตือน" แล้ว const msg = await warnPromise ตรวจ msg.text() เท่ากับ "ระวัง: สินค้าใกล้หมด"
 // ------------------------------------------------
-test.fixme("หน้า console: จับข้อความเตือนด้วย waitForEvent", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า console: จับข้อความเตือนด้วย waitForEvent", async ({ page }) => {
+  await page.goto("/playground/console");
+  // รอสัญญาณพร้อม (hydrate แล้ว) ก่อน: window.dnShop ถูกสร้างหลัง mount ไม่ใช่ทันทีที่ goto จบ
+  await expect.poll(() => page.evaluate(() => (window as DnShopWindow).dnShop?.version)).toBe("1.0.0");
+
+  // สร้าง promise ก่อนกดปุ่ม (ไม่ await) เพราะ event เกิดทันทีที่กด ถ้าสร้างทีหลังอาจพลาด
+  // ใส่เงื่อนไขชนิด "warning" เพื่อไม่ให้ไปจับ console.log ตัวอื่น
+  const warnPromise = page.waitForEvent("console", (msg) => msg.type() === "warning");
+  await page.getByRole("button", { name: "เตือน" }).click();
+
+  const msg = await warnPromise;
+  expect(msg.text()).toBe("ระวัง: สินค้าใกล้หมด");
 });
 
 
@@ -98,8 +129,17 @@ test.fixme("หน้า console: จับข้อความเตือน�
 // แนวทาง: รอให้หน้าพร้อมเหมือนข้อ 4 แล้ว const errorPromise = page.waitForEvent("pageerror") ก่อนกด "ทำให้ error"
 //        ตรวจ error.message เท่ากับ "เกิดข้อผิดพลาดที่ไม่คาดคิด" (error ถูกโยนหลังกดปุ่มเล็กน้อย ด้วย setTimeout)
 // ------------------------------------------------
-test.fixme("หน้า console: กดทำให้ error แล้วจับ pageerror ได้", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 5 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า console: กดทำให้ error แล้วจับ pageerror ได้", async ({ page }) => {
+  await page.goto("/playground/console");
+  // รอสัญญาณพร้อม (hydrate แล้ว) ก่อน: window.dnShop ถูกสร้างหลัง mount ไม่ใช่ทันทีที่ goto จบ
+  await expect.poll(() => page.evaluate(() => (window as DnShopWindow).dnShop?.version)).toBe("1.0.0");
+
+  // error ถูกโยนจาก setTimeout หลังกดปุ่ม จึงต้องรอ event ไม่ใช่ตรวจทันที
+  const errorPromise = page.waitForEvent("pageerror");
+  await page.getByRole("button", { name: "ทำให้ error" }).click();
+
+  const error = await errorPromise;
+  expect(error.message).toBe("เกิดข้อผิดพลาดที่ไม่คาดคิด");
 });
 
 
@@ -109,6 +149,15 @@ test.fixme("หน้า console: กดทำให้ error แล้วจั
 //        ใช้ expect.poll(async () => (await page.consoleMessages()).map((m) => m.text())).toContain("กดปุ่มแล้ว")
 //        และ expect.poll(async () => (await page.pageErrors()).map((e) => e.message)).toContain("เกิดข้อผิดพลาดที่ไม่คาดคิด")
 // ------------------------------------------------
-test.fixme("หน้า console: อ่านข้อความและ error ย้อนหลังด้วย consoleMessages และ pageErrors", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 6 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า console: อ่านข้อความและ error ย้อนหลังด้วย consoleMessages และ pageErrors", async ({ page }) => {
+  await page.goto("/playground/console");
+  // รอสัญญาณพร้อม (hydrate แล้ว) ก่อน: window.dnShop ถูกสร้างหลัง mount ไม่ใช่ทันทีที่ goto จบ
+  await expect.poll(() => page.evaluate(() => (window as DnShopWindow).dnShop?.version)).toBe("1.0.0");
+
+  await page.getByRole("button", { name: "log ข้อความ" }).click();
+  await page.getByRole("button", { name: "ทำให้ error" }).click();
+
+  // consoleMessages/pageErrors เก็บให้เองโดยไม่ต้อง page.on ล่วงหน้า ใช้ expect.poll รอจนข้อมูลมาถึง
+  await expect.poll(async () => (await page.consoleMessages()).map((m) => m.text())).toContain("กดปุ่มแล้ว");
+  await expect.poll(async () => (await page.pageErrors()).map((e) => e.message)).toContain("เกิดข้อผิดพลาดที่ไม่คาดคิด");
 });
