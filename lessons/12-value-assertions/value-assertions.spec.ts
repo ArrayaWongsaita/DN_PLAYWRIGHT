@@ -60,8 +60,19 @@ test("หน้าสินค้า p01 ดับเบิลคลิกรู
 // แนวทาง: เหมือนตัวอย่างที่ 1 แต่กด "เพิ่มจำนวน" สองครั้ง (1,290 x 3 = 3,870)
 //        ในตะกร้า ปุ่มเพิ่มจำนวนส่งค่าไปเซิร์ฟเวอร์แล้วค่อยอัปเดตหน้า จึงควรตรวจ toHaveValue("2") ก่อนกดครั้งที่สอง
 // ------------------------------------------------
-test.fixme("หน้า /cart เพิ่มจำนวนหูฟังเป็น 3 แล้วยอดรวมต้องเป็น 3,870 บาท", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /cart เพิ่มจำนวนหูฟังเป็น 3 แล้วยอดรวมต้องเป็น 3,870 บาท", async ({ page }) => {
+  await addToCart(page, "หูฟังไร้สาย DN Buds");
+  await page.goto("/cart");
+  const quantity = page.getByRole("textbox", { name: "จำนวน" });
+
+  // กดทีละครั้งแล้วตรวจค่าก่อนกดต่อ เพราะปุ่มส่งค่าไปเซิร์ฟเวอร์แล้วค่อยอัปเดตหน้า
+  // ถ้ากดสองครั้งติดกันโดยไม่รอ ครั้งที่สองอาจใช้ค่าเก่าและได้ 2 แทนที่จะเป็น 3
+  await page.getByRole("button", { name: "เพิ่มจำนวน" }).click();
+  await expect(quantity).toHaveValue("2");
+  await page.getByRole("button", { name: "เพิ่มจำนวน" }).click();
+  await expect(quantity).toHaveValue("3");
+  // 1,290 x 3 = 3,870 ข้อความต้องตรงทั้งหมดรวมคำว่า " บาท"
+  await expect(page.getByTestId("subtotal")).toHaveText("3,870 บาท");
 });
 
 
@@ -71,8 +82,14 @@ test.fixme("หน้า /cart เพิ่มจำนวนหูฟังเ�
 //        (ข) หน้า /cart ตอนตะกร้าว่าง ลิงก์ "เลือกซื้อสินค้า" ต้องมี href เป็น "/products"
 // แนวทาง: toHaveAttribute("href", "...") ตรวจค่า attribute ของ element เดียว ลิงก์หาด้วย getByRole("link", ...)
 // ------------------------------------------------
-test.fixme("ลิงก์สินค้าและลิงก์เลือกซื้อสินค้ามี href ถูกต้อง", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("ลิงก์สินค้าและลิงก์เลือกซื้อสินค้ามี href ถูกต้อง", async ({ page }) => {
+  await page.goto("/products");
+  // ชื่อสินค้าเป็นลิงก์ (h2 ที่ครอบด้วย <a>) href ต้องชี้ไปหน้ารายละเอียดของสินค้านั้น
+  await expect(page.getByRole("link", { name: "หูฟังไร้สาย DN Buds" })).toHaveAttribute("href", "/products/p01");
+
+  // ตะกร้าว่างมีลิงก์ชวนไปเลือกซื้อ ตรวจที่ href (ไม่ต้องคลิกก็รู้ว่าไปไหน)
+  await page.goto("/cart");
+  await expect(page.getByRole("link", { name: "เลือกซื้อสินค้า" })).toHaveAttribute("href", "/products");
 });
 
 
@@ -81,8 +98,19 @@ test.fixme("ลิงก์สินค้าและลิงก์เลื�
 // แนวทาง: ต่อจากตัวอย่างที่ 2 ดับเบิลคลิกอีกครั้งแล้วตรวจด้วย .not.toHaveClass(/zoomed/)
 //        ตรวจข้อความใต้รูปด้วยก็ได้: "ดับเบิลคลิกเพื่อขยายรูป" / "ดับเบิลคลิกเพื่อย่อรูป" (toHaveText)
 // ------------------------------------------------
-test.fixme("หน้าสินค้า p01 ดับเบิลคลิกรูปสองครั้งแล้ว class zoomed หายไป", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้าสินค้า p01 ดับเบิลคลิกรูปสองครั้งแล้ว class zoomed หายไป", async ({ page }) => {
+  await page.goto("/products/p01");
+  const image = page.getByRole("img", { name: "หูฟังไร้สาย DN Buds" });
+  const caption = page.getByText("ดับเบิลคลิกเพื่อ", { exact: false });
+
+  await image.dblclick();
+  await expect(image).toHaveClass(/zoomed/);
+  await expect(caption).toHaveText("ดับเบิลคลิกเพื่อย่อรูป");
+
+  // ดับเบิลคลิกอีกครั้งสลับกลับ ใช้ .not เพราะไม่มี assertion ตรงข้ามของ toHaveClass
+  await image.dblclick();
+  await expect(image).not.toHaveClass(/zoomed/);
+  await expect(caption).toHaveText("ดับเบิลคลิกเพื่อขยายรูป");
 });
 
 
@@ -93,8 +121,17 @@ test.fixme("หน้าสินค้า p01 ดับเบิลคลิก
 //        ลิสต์หาด้วย getByRole("list", { name: "สินค้าในตะกร้า" }) ต่อด้วย .getByRole("listitem")
 //        toHaveCount(0) ใช้ตรวจว่า "ไม่มี element นี้เลย" ได้
 // ------------------------------------------------
-test.fixme("หน้า /cart ตะกร้าว่างไม่มีรายการ เพิ่มสินค้าสองชิ้นแล้วมี 2 รายการ", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /cart ตะกร้าว่างไม่มีรายการ เพิ่มสินค้าสองชิ้นแล้วมี 2 รายการ", async ({ page }) => {
+  await page.goto("/cart");
+  // เก็บ locator ไว้ในตัวแปร ใช้ซ้ำได้ทั้งก่อนและหลังเพิ่มสินค้า (locator หา element ใหม่ทุกครั้งที่ใช้)
+  const items = page.getByRole("list", { name: "สินค้าในตะกร้า" }).getByRole("listitem");
+  // ตะกร้าว่างไม่มีลิสต์เลย toHaveCount(0) จึงผ่าน
+  await expect(items).toHaveCount(0);
+
+  await addToCart(page, "หูฟังไร้สาย DN Buds");
+  await addToCart(page, "คีย์บอร์ดเครื่องกล");
+  await page.goto("/cart");
+  await expect(items).toHaveCount(2);
 });
 
 
@@ -104,6 +141,16 @@ test.fixme("หน้า /cart ตะกร้าว่างไม่มีร�
 // แนวทาง: ช่องโค้ดคือ getByLabel("โค้ดส่วนลด") กรอก "DN10" แล้วคลิกปุ่ม "ใช้โค้ด"
 //        ทั้งสามค่าอยู่ใน data-testid ชื่อ subtotal, discount, total (getByTestId)
 // ------------------------------------------------
-test.fixme("หน้า /cart ใช้โค้ด DN10 แล้วส่วนลดและยอดสุทธิถูกต้อง", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 5 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /cart ใช้โค้ด DN10 แล้วส่วนลดและยอดสุทธิถูกต้อง", async ({ page }) => {
+  await addToCart(page, "หูฟังไร้สาย DN Buds");
+  await page.goto("/cart");
+  // ก่อนใช้โค้ด ส่วนลดยังไม่ใช่ 129 บาท (ใช้ .not กับค่าที่ไม่ควรเป็น)
+  await expect(page.getByTestId("discount")).not.toHaveText("129 บาท");
+
+  await page.getByLabel("โค้ดส่วนลด").fill("DN10");
+  await page.getByRole("button", { name: "ใช้โค้ด" }).click();
+  // 10% ของ 1,290 = 129 ยอดสุทธิ 1,290 - 129 = 1,161 (assertion รอให้หน้าอัปเดตเอง)
+  await expect(page.getByTestId("subtotal")).toHaveText("1,290 บาท");
+  await expect(page.getByTestId("discount")).toHaveText("129 บาท");
+  await expect(page.getByTestId("total")).toHaveText("1,161 บาท");
 });

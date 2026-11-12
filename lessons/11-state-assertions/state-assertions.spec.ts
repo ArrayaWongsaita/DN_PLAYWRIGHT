@@ -44,8 +44,15 @@ test("หน้า /register ช่องรับข่าวสารติ๊
 // ข้อ 1: หน้า /login กรอกแค่อีเมล ปุ่ม "เข้าสู่ระบบ" ต้องยัง disabled พอกรอรหัสผ่านต่อปุ่มจึงจะ enabled
 // แนวทาง: เหมือนตัวอย่างที่ 1 แต่ตรวจ toBeDisabled อีกรอบหลัง fill อีเมลช่องเดียว แล้วค่อย fill รหัสผ่านและตรวจ toBeEnabled
 // ------------------------------------------------
-test.fixme("หน้า /login กรอกแค่อีเมลปุ่มยัง disabled", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /login กรอกแค่อีเมลปุ่มยัง disabled", async ({ page }) => {
+  await page.goto("/login");
+  const loginButton = page.getByRole("button", { name: "เข้าสู่ระบบ" });
+  // กรอกแค่อีเมล: เงื่อนไขของปุ่มคือต้องมี "ทั้งอีเมลและรหัสผ่าน" ปุ่มจึงยังต้อง disabled
+  await page.getByLabel("อีเมล").fill("user@dnshop.test");
+  await expect(loginButton).toBeDisabled();
+  // เติมรหัสผ่านแล้วค่อยเปลี่ยนเป็น enabled (toBeEnabled รอเองจนกว่าหน้าจะอัปเดต)
+  await page.getByLabel("รหัสผ่าน").fill("password123");
+  await expect(loginButton).toBeEnabled();
 });
 
 
@@ -54,8 +61,19 @@ test.fixme("หน้า /login กรอกแค่อีเมลปุ่ม
 // แนวทาง: radio ใช้ getByRole("radio", ...) ตรวจด้วย toBeChecked() เหมือนกัน
 //        ส่วนช่องที่ติ๊กไว้แล้ว ใช้ .uncheck() ตามด้วย toBeChecked({ checked: false })
 // ------------------------------------------------
-test.fixme("หน้า /register เลือก radio และติ๊กรับข่าวสารออก", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /register เลือก radio และติ๊กรับข่าวสารออก", async ({ page }) => {
+  await page.goto("/register");
+  // radio ตรวจด้วย toBeChecked เหมือน checkbox ก่อนเลือกต้องยังไม่ถูกเลือก
+  const friend = page.getByRole("radio", { name: "เพื่อนแนะนำ" });
+  await expect(friend).toBeChecked({ checked: false });
+  await friend.check();
+  await expect(friend).toBeChecked();
+
+  // ช่องนี้ติ๊กไว้ก่อนอยู่แล้ว uncheck() ติ๊กออก แล้วต้องไม่ถูกติ๊ก
+  // (ใช้ toBeChecked({ checked: false }) แทนการเขียน .not ซึ่งสอนในบท 12)
+  const newsletter = page.getByRole("checkbox", { name: "รับข่าวสารทางอีเมล" });
+  await newsletter.uncheck();
+  await expect(newsletter).toBeChecked({ checked: false });
 });
 
 
@@ -64,8 +82,14 @@ test.fixme("หน้า /register เลือก radio และติ๊ก�
 // แนวทาง: toBeDisabled กับสองหน้า (ใช้ page.goto สองครั้งใน test เดียวกันได้)
 //        สินค้าที่หมดสต็อกกดเพิ่มลงตะกร้าไม่ได้
 // ------------------------------------------------
-test.fixme("ปุ่มลดจำนวนของ p01 และปุ่มเพิ่มลงตะกร้าของ p05 ต้อง disabled", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("ปุ่มลดจำนวนของ p01 และปุ่มเพิ่มลงตะกร้าของ p05 ต้อง disabled", async ({ page }) => {
+  await page.goto("/products/p01");
+  // จำนวนเริ่มที่ 1 จึงลดต่ำกว่านี้ไม่ได้ ปุ่มต้อง disabled
+  await expect(page.getByRole("button", { name: "ลดจำนวน" })).toBeDisabled();
+
+  // p05 (หมวกแก๊ป) มีของ 0 ชิ้น ปุ่มเพิ่มลงตะกร้าจึง disabled ตั้งแต่เปิดหน้า
+  await page.goto("/products/p05");
+  await expect(page.getByRole("button", { name: "เพิ่มลงตะกร้า" })).toBeDisabled();
 });
 
 
@@ -76,8 +100,18 @@ test.fixme("ปุ่มลดจำนวนของ p01 และปุ่ม
 //        ช่องจำนวนในหน้าสินค้าเป็น readOnly จึงใช้ toBeEditable({ editable: false })
 //        ช่องจำนวนคือ role "textbox" ชื่อ "จำนวน" (บท 06)
 // ------------------------------------------------
-test.fixme("ช่องอีเมลว่างและได้โฟกัสเมื่อคลิก ช่องจำนวนแก้ไขไม่ได้", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("ช่องอีเมลว่างและได้โฟกัสเมื่อคลิก ช่องจำนวนแก้ไขไม่ได้", async ({ page }) => {
+  await page.goto("/login");
+  const email = page.getByLabel("อีเมล");
+  // ช่องยังไม่มีข้อความ: toBeEmpty ใช้ตรวจ "ค่าในช่อง" ว่าว่างเปล่า
+  await expect(email).toBeEmpty();
+  // click ย้ายโฟกัสคีย์บอร์ดเข้าช่อง toBeFocused จึงผ่าน
+  await email.click();
+  await expect(email).toBeFocused();
+
+  // ช่องจำนวนในหน้าสินค้าเป็น readonly ผู้ใช้พิมพ์แก้เองไม่ได้ (ต้องกดปุ่มเพิ่ม/ลด) จึงใช้ editable: false
+  await page.goto("/products/p01");
+  await expect(page.getByRole("textbox", { name: "จำนวน" })).toBeEditable({ editable: false });
 });
 
 
@@ -88,6 +122,16 @@ test.fixme("ช่องอีเมลว่างและได้โฟก�
 //        toBeHidden ผ่านได้ทั้งกรณีที่ element ซ่อนอยู่และกรณีที่ยังไม่มี element นั้นในหน้า
 //        อีเมล user@dnshop.test รหัสผ่านที่ถูกคือ password123 ลองใส่ค่าอื่นให้ผิด
 // ------------------------------------------------
-test.fixme("หน้า /login ข้อความ error ซ่อนอยู่ก่อนกดส่ง แล้วโผล่เมื่อรหัสผ่านผิด", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 5 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /login ข้อความ error ซ่อนอยู่ก่อนกดส่ง แล้วโผล่เมื่อรหัสผ่านผิด", async ({ page }) => {
+  await page.goto("/login");
+  // กรองด้วยข้อความเพราะ Next.js มี role="alert" ว่างเปล่าอยู่ทุกหน้า (ดูบท 07)
+  const error = page.getByRole("alert").filter({ hasText: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });
+  // ก่อนกดส่งยังไม่มี error ใน DOM toBeHidden ผ่านทั้งกรณีซ่อนและกรณีไม่มี element
+  await expect(error).toBeHidden();
+
+  await page.getByLabel("อีเมล").fill("user@dnshop.test");
+  await page.getByLabel("รหัสผ่าน").fill("wrong-password");
+  await page.getByRole("button", { name: "เข้าสู่ระบบ" }).click();
+  // รอเซิร์ฟเวอร์ตอบ แล้วข้อความต้องโผล่ (toBeVisible รอเอง)
+  await expect(error).toBeVisible();
 });

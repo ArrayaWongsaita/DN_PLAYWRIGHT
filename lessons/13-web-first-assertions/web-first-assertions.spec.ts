@@ -36,18 +36,17 @@ test("หน้า /playground/slow ที่ delay 6 วินาที ต้�
 
 
 // ------------------------------------------------
-// ตัวอย่างที่ 3 (ตั้งใจให้พัง): เปลี่ยน test.fixme เป็น test แล้วรันดูว่าพังเพราะอะไร
+// ตัวอย่างที่ 3 (เฉลย): ฉบับแก้ของโค้ดที่พังใน main
 // ------------------------------------------------
-// ขั้นตอน: 1) เปลี่ยน test.fixme เป็น test  2) รัน pnpm test 13-web-first-assertions
-//        3) อ่านข้อความ error: Expected / Received คืออะไร  4) เทียบกับตัวอย่างที่ 1 ที่ผ่าน
-// คำถามชวนคิด: ทำไม isVisible() ตอบ false ทั้งที่ผ่านไปไม่ถึงวินาทีข้อความก็ขึ้น?
-// ทำเสร็จแล้วเปลี่ยนกลับเป็น test.fixme เพื่อให้ผลของบทกลับมาเป็น "ไม่มี failed"
-test.fixme("ตัวอย่างที่ 3 (พัง) ใช้ isVisible() แล้วตรวจด้วย toBe", async ({ page }) => {
+// เหตุผลที่ฉบับเดิมพัง: isVisible() ตอบทันทีตอนที่ข้อความยังไม่ขึ้น (แอปหน่วง 800ms) ได้ false
+// แล้ว expect(false).toBe(true) ก็ตรวจครั้งเดียวและล้มเหลวทันที ไม่มีอะไรรอเลย
+// ทางแก้: ส่ง locator เข้า expect ตรงๆ แล้วใช้ web-first assertion ซึ่งลองซ้ำเองจนผ่านหรือหมดเวลา
+test("ตัวอย่างที่ 3 (เฉลย) ใช้ await expect(locator).toBeVisible() แทน isVisible()", async ({ page }) => {
   await page.goto("/products/p01");
   await page.getByRole("button", { name: "เพิ่มลงตะกร้า" }).click();
   const message = page.getByRole("status").filter({ hasText: "เพิ่มลงตะกร้าแล้ว" });
-  // isVisible() ตอบทันทีว่า "ตอนนี้" เห็นไหม ไม่รอ และ toBe ก็ไม่รอ (ตรวจครั้งเดียวแล้วจบ)
-  expect(await message.isVisible()).toBe(true);
+  // ฉบับเดิม (พัง): expect(await message.isVisible()).toBe(true);
+  await expect(message).toBeVisible();
 });
 
 
@@ -55,8 +54,11 @@ test.fixme("ตัวอย่างที่ 3 (พัง) ใช้ isVisible(
 // ข้อ 1: หน้าสินค้า p02 (คีย์บอร์ดเครื่องกล) กดเพิ่มลงตะกร้าแล้วต้องเห็นข้อความ "เพิ่มลงตะกร้าแล้ว"
 // แนวทาง: เหมือนตัวอย่างที่ 1 เปลี่ยนเป็น /products/p02 (ข้อความยืนยันเหมือนเดิม)
 // ------------------------------------------------
-test.fixme("หน้าสินค้า p02 กดเพิ่มลงตะกร้าแล้วต้องเห็นข้อความยืนยัน", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้าสินค้า p02 กดเพิ่มลงตะกร้าแล้วต้องเห็นข้อความยืนยัน", async ({ page }) => {
+  await page.goto("/products/p02");
+  await page.getByRole("button", { name: "เพิ่มลงตะกร้า" }).click();
+  // แอปหน่วง 800ms ก่อนแสดงข้อความ toBeVisible รอเองจึงไม่ต้องมี sleep
+  await expect(page.getByRole("status").filter({ hasText: "เพิ่มลงตะกร้าแล้ว" })).toBeVisible();
 });
 
 
@@ -65,8 +67,12 @@ test.fixme("หน้าสินค้า p02 กดเพิ่มลงตะ
 // แนวทาง: ต่อจากข้อ 1 ตรวจ getByTestId("cart-count") ด้วย toHaveText("1") ตัวเลขนี้อัปเดตหลังข้อความยืนยัน
 //        จึงตรวจแล้วอาจยังเป็น "0" ชั่วขณะ ปล่อยให้ assertion รอเอง
 // ------------------------------------------------
-test.fixme("กดเพิ่มลงตะกร้าแล้วตัวเลขตะกร้าที่ header ต้องเป็น 1", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("กดเพิ่มลงตะกร้าแล้วตัวเลขตะกร้าที่ header ต้องเป็น 1", async ({ page }) => {
+  await page.goto("/products/p01");
+  await page.getByRole("button", { name: "เพิ่มลงตะกร้า" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "เพิ่มลงตะกร้าแล้ว" })).toBeVisible();
+  // ตัวเลขใน header อัปเดตหลังข้อความ ถ้าอ่านค่าครั้งเดียวอาจยังเป็น "0" toHaveText ลองซ้ำจนเป็น "1"
+  await expect(page.getByTestId("cart-count")).toHaveText("1");
 });
 
 
@@ -75,8 +81,13 @@ test.fixme("กดเพิ่มลงตะกร้าแล้วตัว�
 // แนวทาง: ทั้งสองข้อความอยู่ใน role="status" แยกกันด้วย .filter({ hasText }) ตรวจด้วย toBeVisible ทีละข้อความ
 //        2 วินาทีน้อยกว่า 5 วินาทีของ expect จึงไม่ต้องใส่ timeout
 // ------------------------------------------------
-test.fixme("หน้า /playground/slow โหลดข้อมูลแล้วเห็นสถานะกำลังโหลดและเสร็จแล้ว", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /playground/slow โหลดข้อมูลแล้วเห็นสถานะกำลังโหลดและเสร็จแล้ว", async ({ page }) => {
+  await page.goto("/playground/slow");
+  await page.getByRole("button", { name: "โหลดข้อมูล" }).click();
+  // สถานะระหว่างโหลดอยู่ 2 วินาที ตรวจเจอแน่นอนเพราะ toBeVisible ลองซ้ำตลอดช่วงนั้น
+  await expect(page.getByRole("status").filter({ hasText: "กำลังโหลด..." })).toBeVisible();
+  // 2 วินาทีน้อยกว่าเวลารอเริ่มต้น 5 วินาที ไม่ต้องใส่ timeout
+  await expect(page.getByRole("status").filter({ hasText: "โหลดข้อมูลเสร็จแล้ว" })).toBeVisible();
 });
 
 
@@ -85,8 +96,12 @@ test.fixme("หน้า /playground/slow โหลดข้อมูลแล�
 // แนวทาง: 7 วินาทีนานกว่าค่าเริ่มต้นของ expect เหมือนตัวอย่างที่ 2 ต้องใส่ { timeout: 10_000 }
 //        ลองรันก่อนโดยยังไม่ใส่ timeout เพื่ออ่านข้อความ error "Timeout 5000ms exceeded" แล้วค่อยแก้
 // ------------------------------------------------
-test.fixme("หน้า /playground/slow ที่ delay 7 วินาที ต้องใส่ timeout ให้ assertion", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /playground/slow ที่ delay 7 วินาที ต้องใส่ timeout ให้ assertion", async ({ page }) => {
+  await page.goto("/playground/slow?delay=7000");
+  await page.getByRole("button", { name: "โหลดข้อมูล" }).click();
+  // 7 วินาทีนานกว่า 5 วินาทีของ expect (ถ้าไม่ใส่ timeout จะล้มด้วย "Timeout 5000ms exceeded")
+  // ใส่ 10_000 เป็นเพดาน ผ่านทันทีที่ข้อความขึ้น ไม่ได้หน่วงเวลาเพิ่ม
+  await expect(page.getByRole("status").filter({ hasText: "โหลดข้อมูลเสร็จแล้ว" })).toBeVisible({ timeout: 10_000 });
 });
 
 
@@ -97,6 +112,12 @@ test.fixme("หน้า /playground/slow ที่ delay 7 วินาที �
 //        ซึ่งหาเจอเฉพาะตอนที่ชื่อเปลี่ยนแล้ว ตรวจ toBeEnabled() ก่อน click ก็ได้
 //        (click รอให้ปุ่มพร้อมกดเองอยู่แล้ว แต่ฝึกใช้ assertion ที่รอ)
 // ------------------------------------------------
-test.fixme("หน้า /playground/slow ปุ่มส่งฟอร์มพร้อมกดแล้วกดส่งได้", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 5 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /playground/slow ปุ่มส่งฟอร์มพร้อมกดแล้วกดส่งได้", async ({ page }) => {
+  await page.goto("/playground/slow");
+  // ชื่อปุ่ม "ส่งฟอร์ม" มีหลังพร้อมใช้งานเท่านั้น (ก่อนหน้านั้นชื่อ "รอสักครู่...") locator จึงรอเจอเอง
+  const submit = page.getByRole("button", { name: "ส่งฟอร์ม" });
+  // toBeEnabled รอจนปุ่มหมด disabled (ราว 1.5 วินาที)
+  await expect(submit).toBeEnabled();
+  await submit.click();
+  await expect(page.getByText("ส่งฟอร์มแล้ว")).toBeVisible();
 });
