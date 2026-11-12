@@ -42,34 +42,45 @@ test("login แล้วแต่ตะกร้าเริ่มว่าง�
 
 // ------------------------------------------------
 // ข้อ 1: เมนูหัวเว็บของคนที่ login แล้ว
-// แนวทาง: goto("/") แล้วตรวจใน nav "เมนูหลัก" ว่ามีลิงก์ "บัญชีของฉัน" และปุ่ม "ออกจากระบบ" เห็นอยู่
-//        และไม่มีลิงก์ "เข้าสู่ระบบ" (toHaveCount(0))
 // ------------------------------------------------
-test.fixme("หัวเว็บแสดง บัญชีของฉัน และ ออกจากระบบ", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หัวเว็บแสดง บัญชีของฉัน และ ออกจากระบบ", async ({ page }) => {
+  await page.goto("/");
+
+  const nav = page.getByRole("navigation", { name: "เมนูหลัก" });
+  // สถานะ login มาจาก cookie dn_auth ในไฟล์ storageState จึงเห็นเมนูของคนที่ login แล้วตั้งแต่โหลดหน้าแรก
+  await expect(nav.getByRole("link", { name: "บัญชีของฉัน" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "ออกจากระบบ" })).toBeVisible();
+  // toHaveCount(0) รอจนกว่าจะไม่มีลิงก์นี้เหลือ ใช้ยืนยันว่า "ไม่มี" ได้ตรงกว่า expect(...).not.toBeVisible()
+  await expect(nav.getByRole("link", { name: "เข้าสู่ระบบ" })).toHaveCount(0);
 });
 
 
 // ------------------------------------------------
 // ข้อ 2: ฟอร์ม checkout เติมชื่อให้คนที่ login แล้ว
-// แนวทาง: เพิ่มหูฟัง p01 จำนวน 1 ด้วย page.request.post("/api/cart", ...) (ตรวจ status 201)
-//        goto("/checkout") แล้วตรวจว่าช่อง label "ชื่อ-นามสกุล" มีค่า "สมชาย ใจดี" (toHaveValue)
 // ------------------------------------------------
-test.fixme("checkout เติมชื่อผู้รับให้อัตโนมัติ", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("checkout เติมชื่อผู้รับให้อัตโนมัติ", async ({ page }) => {
+  // checkout ต้องมีของในตะกร้า (ตะกร้าว่างจะ redirect ไป /cart) เตรียมด้วย API ไม่ต้องคลิกบนหน้า products
+  const add = await page.request.post("/api/cart", { data: { productId: "p01", quantity: 1 } });
+  expect(add.status()).toBe(201);
+
+  await page.goto("/checkout");
+  // ชื่อนี้มาจากบัญชีที่ login ใน auth.setup.ts ไม่ได้พิมพ์เอง
+  await expect(page.getByLabel("ชื่อ-นามสกุล")).toHaveValue("สมชาย ใจดี");
 });
 
 
 // ------------------------------------------------
 // ข้อ 3: ทับ storageState เป็นคนที่ยังไม่ login
-// แนวทาง: ใน test.describe ใส่ test.use({ storageState: { cookies: [], origins: [] } }) (สถานะว่าง = ไม่มี cookie)
-//        แล้ว goto("/account") ตรวจว่า URL เป็น /login?next=%2Faccount (ใช้ toHaveURL แบบ string ตรงตัว)
-//        และเห็น h1 "เข้าสู่ระบบ"
 // ------------------------------------------------
 test.describe("ยังไม่ login", () => {
-  // 👉 ใส่ test.use({ storageState: ... }) ที่นี่
+  // สถานะว่าง (ไม่มี cookie ไม่มี localStorage) ทับ storageState ของ project ให้ทุก test ในกลุ่มนี้
+  test.use({ storageState: { cookies: [], origins: [] } });
 
-  test.fixme("เปิด /account แล้วถูกส่งไปหน้า login", async ({ page }) => {
-    // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+  test("เปิด /account แล้วถูกส่งไปหน้า login", async ({ page }) => {
+    await page.goto("/account");
+
+    // ?next=%2Faccount คือ "/account" ที่ผ่านการ encode หน้า login จะพากลับมาหลัง login สำเร็จ
+    await expect(page).toHaveURL("/login?next=%2Faccount");
+    await expect(page.getByRole("heading", { name: "เข้าสู่ระบบ" })).toBeVisible();
   });
 });

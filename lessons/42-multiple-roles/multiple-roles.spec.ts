@@ -64,39 +64,55 @@ test("admin เพิ่มสินค้า แต่ user ไม่เห็�
 
 // ------------------------------------------------
 // ข้อ 1: ผู้ใช้ทั่วไปเข้าหน้าจัดการสินค้าไม่ได้
-// แนวทาง: ในกลุ่ม describe ที่ใช้ test.use({ storageState: userFile }) (ใส่เอง)
-//        goto("/admin/products") แล้วตรวจ h1 "คุณไม่มีสิทธิ์เข้าหน้านี้" และตาราง "ตารางสินค้า" ไม่มี (toHaveCount(0))
 // ------------------------------------------------
 test.describe("ข้อ 1: ผู้ใช้ทั่วไปกับหน้า admin", () => {
-  // 👉 ใส่ test.use({ storageState: ... }) ที่นี่
+  test.use({ storageState: userFile });
 
-  test.fixme("เข้า /admin/products แล้วเห็นว่าไม่มีสิทธิ์", async ({ page }) => {
-    // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+  test("เข้า /admin/products แล้วเห็นว่าไม่มีสิทธิ์", async ({ page }) => {
+    await page.goto("/admin/products");
+
+    // แอปตอบหน้านี้ด้วย HTTP 200 พร้อมหัวข้อ "คุณไม่มีสิทธิ์เข้าหน้านี้" (ไม่ใช่ 403) จึงตรวจจากข้อความบนหน้า
+    await expect(page.getByRole("heading", { name: "คุณไม่มีสิทธิ์เข้าหน้านี้" })).toBeVisible();
+    await expect(page.getByRole("table", { name: "ตารางสินค้า" })).toHaveCount(0);
   });
 });
 
 
 // ------------------------------------------------
 // ข้อ 2: ผู้ดูแลระบบเห็นหน้าจัดการสินค้า
-// แนวทาง: เหมือนข้อ 1 แต่ใช้ adminFile goto("/admin/products") ตรวจ h1 "จัดการสินค้า" และ
-//        ตรวจ nav "เมนูหลัก" ว่ามีลิงก์ "จัดการสินค้า"
 // ------------------------------------------------
 test.describe("ข้อ 2: ผู้ดูแลระบบกับหน้า admin", () => {
-  // 👉 ใส่ test.use({ storageState: ... }) ที่นี่
+  test.use({ storageState: adminFile });
 
-  test.fixme("เข้า /admin/products ได้และเห็นลิงก์จัดการสินค้า", async ({ page }) => {
-    // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+  test("เข้า /admin/products ได้และเห็นลิงก์จัดการสินค้า", async ({ page }) => {
+    await page.goto("/admin/products");
+
+    await expect(page.getByRole("heading", { name: "จัดการสินค้า" })).toBeVisible();
+    // ลิงก์ "จัดการสินค้า" ใน nav มีเฉพาะ admin (หัวข้อ h1 ชื่อเดียวกัน แต่ scope ที่ nav จึงไม่ชนกัน)
+    await expect(page.getByRole("navigation", { name: "เมนูหลัก" }).getByRole("link", { name: "จัดการสินค้า" })).toBeVisible();
   });
 });
 
 
 // ------------------------------------------------
 // ข้อ 3: สองบทบาทพร้อมกัน ตะกร้าแยกกัน
-// แนวทาง: สร้างสอง context จาก userFile และ adminFile (เหมือนตัวอย่างที่ 2) ให้ user เพิ่มหูฟัง p01 ด้วย
-//        userPage.request.post("/api/cart", { data: { productId: "p01", quantity: 1 } }) (ตรวจ 201)
-//        แล้วตรวจว่า goto("/") ในฝั่ง user มี cart-count "1" ส่วนฝั่ง admin เป็น "0"
-//        อย่าลืมปิดทั้งสอง context ตอนท้าย
 // ------------------------------------------------
-test.fixme("ตะกร้าของ user กับ admin แยกกัน", async ({ browser }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("ตะกร้าของ user กับ admin แยกกัน", async ({ browser }) => {
+  const userContext = await browser.newContext({ storageState: userFile });
+  const adminContext = await browser.newContext({ storageState: adminFile });
+  const userPage = await userContext.newPage();
+  const adminPage = await adminContext.newPage();
+
+  // userPage.request ใช้ cookie ของ userContext ตะกร้าจึงเป็นของ user เท่านั้น
+  const add = await userPage.request.post("/api/cart", { data: { productId: "p01", quantity: 1 } });
+  expect(add.status()).toBe(201);
+
+  await userPage.goto("/");
+  await adminPage.goto("/");
+  await expect(userPage.getByTestId("cart-count")).toHaveText("1");
+  // แต่ละ context ได้ session (dn_sid) ของตัวเอง ตะกร้าของ admin จึงยังว่าง
+  await expect(adminPage.getByTestId("cart-count")).toHaveText("0");
+
+  await userContext.close();
+  await adminContext.close();
 });

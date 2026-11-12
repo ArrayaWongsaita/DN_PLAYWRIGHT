@@ -46,77 +46,93 @@ test("หัวเว็บแสดงเมนูต่างกันระ�
 
 // ------------------------------------------------
 // ข้อ 1: บังคับ viewport มือถือเอง
-// แนวทาง: ใน test.describe ใส่ test.use({ viewport: { width: 390, height: 844 } }) แล้ว goto("/")
-//        ตรวจว่าปุ่ม "เปิดเมนู" เห็นอยู่ (ได้ผลทุก project เพราะ viewport ทับค่าของ project)
-//        ลองกดปุ่มแล้วตรวจว่า aria-expanded เป็น "true" ด้วย (toHaveAttribute)
 // ------------------------------------------------
 test.describe("ข้อ 1: viewport มือถือ", () => {
-  // 👉 ใส่ test.use({ viewport: ... }) ที่นี่
+  // viewport ที่ test.use ทับ viewport ของ project จึงได้ผลเหมือนกันทั้ง 4 project
+  test.use({ viewport: { width: 390, height: 844 } });
 
-  test.fixme("จอ 390x844 เห็นปุ่มเปิดเมนู", async ({ page }) => {
-    // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+  test("จอ 390x844 เห็นปุ่มเปิดเมนู", async ({ page }) => {
+    await page.goto("/");
+
+    const menuButton = page.getByRole("button", { name: "เปิดเมนู" });
+    await expect(menuButton).toBeVisible();
+    await expect(menuButton).toHaveAttribute("aria-expanded", "false");
+    await menuButton.click();
+    await expect(menuButton).toHaveAttribute("aria-expanded", "true");
   });
 });
 
 
 // ------------------------------------------------
 // ข้อ 2: เปลี่ยนภาษาเป็น en-US
-// แนวทาง: test.use({ locale: "en-US" }) แล้ว goto("/") ข้อความใน data-testid="today" ต้องเป็นภาษาอังกฤษ
-//        อย่าเทียบวันที่ตรงๆ (วันที่เปลี่ยนทุกวัน) ใช้ regex เช่น /^[A-Za-z]+, [A-Za-z]+ \d{1,2}, \d{4}$/
-//        (หน้าแรกสร้างวันที่ด้วย Intl.DateTimeFormat(navigator.language, { dateStyle: "full" }) ได้ประมาณ "Thursday, November 12, 2026")
 // ------------------------------------------------
 test.describe("ข้อ 2: locale en-US", () => {
-  // 👉 ใส่ test.use({ locale: ... }) ที่นี่
+  test.use({ locale: "en-US" });
 
-  test.fixme("วันที่บนหน้าแรกเป็นภาษาอังกฤษ", async ({ page }) => {
-    // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+  test("วันที่บนหน้าแรกเป็นภาษาอังกฤษ", async ({ page }) => {
+    await page.goto("/");
+
+    // วันที่เปลี่ยนทุกวัน จึงตรวจ "รูปแบบ" แทนค่า: ชื่อวัน, ชื่อเดือน วันที่, ปี (ภาษาไทยจะไม่ตรง regex นี้)
+    await expect(page.getByTestId("today")).toHaveText(/^[A-Za-z]+, [A-Za-z]+ \d{1,2}, \d{4}$/);
   });
 });
 
 
 // ------------------------------------------------
 // ข้อ 3: เขตเวลา + page.clock เห็นคำทักทายต่างกัน
-// แนวทาง: ใช้ page.clock.install({ time: new Date("2026-06-01T01:00:00Z") }) ก่อน goto("/") (เวลาเดียวกันทั่วโลก)
-//        กลุ่มแรก test.use({ timezoneId: "Asia/Bangkok" }) (ตรงกับ 08:00) ตรวจ greeting "สวัสดีตอนเช้า"
-//        กลุ่มสอง test.use({ timezoneId: "America/New_York" }) (ตรงกับ 21:00) ตรวจ greeting "สวัสดีตอนเย็น"
 // ------------------------------------------------
 test.describe("ข้อ 3: เขตเวลา Asia/Bangkok", () => {
-  // 👉 ใส่ test.use({ timezoneId: ... }) ที่นี่
+  test.use({ timezoneId: "Asia/Bangkok" });
 
-  test.fixme("เวลาเดียวกัน ที่กรุงเทพเป็นตอนเช้า", async ({ page }) => {
-    // 👉 เขียน test ของข้อ 3 (กรุงเทพ) ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+  test("เวลาเดียวกัน ที่กรุงเทพเป็นตอนเช้า", async ({ page }) => {
+    // ตั้งเวลาปลอมก่อน goto: 01:00 UTC = 08:00 ที่กรุงเทพ (UTC+7)
+    await page.clock.install({ time: new Date("2026-06-01T01:00:00Z") });
+    await page.goto("/");
+    await expect(page.getByTestId("greeting")).toHaveText("สวัสดีตอนเช้า");
   });
 });
 
 test.describe("ข้อ 3: เขตเวลา America/New_York", () => {
-  // 👉 ใส่ test.use({ timezoneId: ... }) ที่นี่
+  test.use({ timezoneId: "America/New_York" });
 
-  test.fixme("เวลาเดียวกัน ที่นิวยอร์กเป็นตอนเย็น", async ({ page }) => {
-    // 👉 เขียน test ของข้อ 3 (นิวยอร์ก) ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+  test("เวลาเดียวกัน ที่นิวยอร์กเป็นตอนเย็น", async ({ page }) => {
+    // 01:00 UTC เดียวกัน = 21:00 ของวันก่อนที่นิวยอร์ก (UTC-4 ช่วง daylight saving) คำทักทายจึงต่างกัน
+    await page.clock.install({ time: new Date("2026-06-01T01:00:00Z") });
+    await page.goto("/");
+    await expect(page.getByTestId("greeting")).toHaveText("สวัสดีตอนเย็น");
   });
 });
 
 
 // ------------------------------------------------
 // ข้อ 4: ตำแหน่งที่ตั้ง (geolocation) และ permission
-// แนวทาง: test.use({ geolocation: { latitude: 13.7563, longitude: 100.5018 }, permissions: ["geolocation"] })
-//        goto("/stores") กดปุ่ม "หาสาขาใกล้ฉัน" ตรวจ role status ที่มีข้อความ "สาขาที่ใกล้ที่สุดคือ สาขาสยาม"
-//        (พิกัดนี้อยู่กรุงเทพ) ถ้ารู้สึกอยากลอง ลองเปลี่ยนเป็นพิกัดเชียงใหม่ 18.7883, 98.9853
 // ------------------------------------------------
 test.describe("ข้อ 4: geolocation", () => {
-  // 👉 ใส่ test.use({ geolocation: ..., permissions: ... }) ที่นี่
+  // geolocation กำหนดพิกัด ส่วน permissions ต้องอนุญาตให้ด้วย ไม่งั้นเว็บจะถูกปฏิเสธและแสดง alert "ไม่ได้รับอนุญาต..."
+  test.use({ geolocation: { latitude: 13.7563, longitude: 100.5018 }, permissions: ["geolocation"] });
 
-  test.fixme("หาสาขาใกล้ฉันได้สาขาสยาม", async ({ page }) => {
-    // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+  test("หาสาขาใกล้ฉันได้สาขาสยาม", async ({ page }) => {
+    await page.goto("/stores");
+    await page.getByRole("button", { name: "หาสาขาใกล้ฉัน" }).click();
+
+    // กรอง status ด้วยข้อความ เพราะหน้าอาจมี role=status อื่นอยู่ด้วย
+    await expect(page.getByRole("status").filter({ hasText: "สาขาที่ใกล้ที่สุดคือ สาขาสยาม" })).toBeVisible();
   });
 });
 
 
 // ------------------------------------------------
 // ข้อ 5: ออฟไลน์
-// แนวทาง: goto("/") แล้วสั่ง context.setOffline(true) (รับ context จาก fixture) ตรวจ role status
-//        "ไม่มีการเชื่อมต่ออินเทอร์เน็ต" เห็นอยู่ จากนั้น setOffline(false) แล้วตรวจว่าข้อความนั้นหายไป (toBeHidden)
 // ------------------------------------------------
-test.fixme("ออฟไลน์แล้วแอปแสดงแถบแจ้งเตือน", async ({ page, context }) => {
-  // 👉 เขียน test ของข้อ 5 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("ออฟไลน์แล้วแอปแสดงแถบแจ้งเตือน", async ({ page, context }) => {
+  await page.goto("/");
+  const banner = page.getByRole("status").filter({ hasText: "ไม่มีการเชื่อมต่ออินเทอร์เน็ต" });
+  await expect(banner).toBeHidden();
+
+  // setOffline เป็นของ context (ไม่ใช่ page) หน้าทั้งหมดใน context นี้จะออฟไลน์
+  await context.setOffline(true);
+  await expect(banner).toBeVisible();
+
+  await context.setOffline(false);
+  await expect(banner).toBeHidden();
 });
