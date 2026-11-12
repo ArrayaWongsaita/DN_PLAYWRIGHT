@@ -39,9 +39,11 @@ test("หน้า /cart ต้องมี title และหัวข้อท
 //        3) เติม await ที่ขาด แล้วแก้ชื่อ heading กลับ ให้ test ผ่านจริง
 //        ดูบรรทัดที่ pnpm lint เตือนเป็นเบาะแส
 // ------------------------------------------------
-test.fixme("หน้า /products ต้องมีหัวข้อ สินค้าทั้งหมด (ข้อนี้ลืม await)", async ({ page }) => {
+test("หน้า /products ต้องมีหัวข้อ สินค้าทั้งหมด (ข้อนี้ลืม await)", async ({ page }) => {
   await page.goto("/products");
-  expect(page.getByRole("heading", { name: "สินค้าทั้งหมด" })).toBeVisible();
+  // เติม await หน้า expect: ไม่งั้น test จบก่อนที่ assertion จะถูกตรวจเสร็จ
+  // ตอนที่ค่าถูกอยู่แล้วจะ "ผ่านหลอก" แต่ถ้าค่าผิดจะเจอ error แปลกๆ ว่า Test ended
+  await expect(page.getByRole("heading", { name: "สินค้าทั้งหมด" })).toBeVisible();
 });
 
 
@@ -50,8 +52,10 @@ test.fixme("หน้า /products ต้องมีหัวข้อ สิ�
 // แนวทาง: เปลี่ยน test.fixme เป็น test แล้วรันหลายๆ รอบ (เช่น เพิ่ม --repeat-each=5)
 //        ดูว่าผลเหมือนเดิมทุกรอบไหม แล้วเติม await ที่ขาด
 // ------------------------------------------------
-test.fixme("หน้า /login ต้องมี title ว่า เข้าสู่ระบบ | DN Shop (ข้อนี้ลืม await)", async ({ page }) => {
-  page.goto("/login");
+test("หน้า /login ต้องมี title ว่า เข้าสู่ระบบ | DN Shop (ข้อนี้ลืม await)", async ({ page }) => {
+  // เติม await หน้า page.goto: ไม่งั้นโค้ดวิ่งต่อก่อนที่หน้าจะเริ่มโหลด
+  // ผลที่ได้ไม่คงที่ บางรอบผ่าน บางรอบเจอ "page.goto: Test ended."
+  await page.goto("/login");
   await expect(page).toHaveTitle("เข้าสู่ระบบ | DN Shop");
 });
 
@@ -61,10 +65,11 @@ test.fixme("หน้า /login ต้องมี title ว่า เข้า�
 // แนวทาง: รัน pnpm lint ดูว่ามีคำเตือนกี่บรรทัดของข้อนี้ แล้วเติม await ให้ครบทุกบรรทัดที่เตือน
 //        รัน pnpm lint อีกครั้ง คำเตือนของข้อนี้ต้องหายไป
 // ------------------------------------------------
-test.fixme("หน้า /help/ordering ต้องมี title และหัวข้อที่ถูกต้อง (ข้อนี้ลืม await)", async ({ page }) => {
-  page.goto("/help/ordering");
-  expect(page).toHaveTitle("คู่มือการสั่งซื้อ | DN Shop");
-  expect(page.getByRole("heading", { name: "คู่มือการสั่งซื้อ" })).toBeVisible();
+test("หน้า /help/ordering ต้องมี title และหัวข้อที่ถูกต้อง (ข้อนี้ลืม await)", async ({ page }) => {
+  // ขาด 3 จุด: goto และ expect สองตัว (pnpm lint เตือน 3 บรรทัด) เติม await ให้ครบทุกบรรทัด
+  await page.goto("/help/ordering");
+  await expect(page).toHaveTitle("คู่มือการสั่งซื้อ | DN Shop");
+  await expect(page.getByRole("heading", { name: "คู่มือการสั่งซื้อ" })).toBeVisible();
 });
 
 
@@ -73,6 +78,8 @@ test.fixme("หน้า /help/ordering ต้องมี title และหั
 // แนวทาง: เขียนโดย await ครบทุกบรรทัด (ดูตัวอย่างที่ 1)
 //        จากนั้นลองลบ await หน้า expect ออก แล้วรัน pnpm lint ดูว่าเตือนที่บรรทัดไหน แล้วใส่กลับ
 // ------------------------------------------------
-test.fixme("หน้า /playground ต้องมีหัวข้อ Playground", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /playground ต้องมีหัวข้อ Playground", async ({ page }) => {
+  // await ครบทุกบรรทัด: ถ้าลองลบ await หน้า expect ออก pnpm lint จะเตือนที่บรรทัดนั้นทันที
+  await page.goto("/playground");
+  await expect(page.getByRole("heading", { name: "Playground" })).toBeVisible();
 });

@@ -42,8 +42,10 @@ test("หน้า /playground ต้องมีหัวข้อ Playground",
 // วิธีรัน: รันทั้งบท   pnpm test 02-running-tests
 // แนวทาง: โครงเดียวกับตัวอย่าง เปลี่ยน path เป็น "/products" และชื่อ heading เป็น "สินค้าทั้งหมด"
 // ------------------------------------------------
-test.fixme("หน้า /products ต้องมีหัวข้อ สินค้าทั้งหมด", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /products ต้องมีหัวข้อ สินค้าทั้งหมด", async ({ page }) => {
+  await page.goto("/products");
+  // heading ชื่อ "สินค้าทั้งหมด" คือ h1 ของหน้า ผู้ใช้เห็นเป็นหัวข้อใหญ่ จึงเหมาะกับการยืนยันว่าเปิดถูกหน้า
+  await expect(page.getByRole("heading", { name: "สินค้าทั้งหมด" })).toBeVisible();
 });
 
 
@@ -52,8 +54,9 @@ test.fixme("หน้า /products ต้องมีหัวข้อ สิ�
 // วิธีรัน: รันเฉพาะข้อนี้ด้วย -g (grep ชื่อ test)   pnpm test 02-running-tests -g "/cart"
 // แนวทาง: โครงเดียวกับข้อ 1 ดูผลว่ารันแค่ 1 ข้อ ที่เหลือไม่ถูกเลือก (ไม่ขึ้นในรายการ)
 // ------------------------------------------------
-test.fixme("หน้า /cart ต้องมีหัวข้อ ตะกร้าสินค้า", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /cart ต้องมีหัวข้อ ตะกร้าสินค้า", async ({ page }) => {
+  await page.goto("/cart");
+  await expect(page.getByRole("heading", { name: "ตะกร้าสินค้า" })).toBeVisible();
 });
 
 
@@ -63,8 +66,10 @@ test.fixme("หน้า /cart ต้องมีหัวข้อ ตะกร
 // แนวทาง: โครงเดียวกับข้อ 1 หน้าต่าง Chromium จะเด้งขึ้นมาแล้วปิดเร็วมาก
 //        ถ้าอยากเห็นนานขึ้น ให้ลองใช้ข้อ 4 (UI mode)
 // ------------------------------------------------
-test.fixme("หน้า /login ต้องมีหัวข้อ เข้าสู่ระบบ", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /login ต้องมีหัวข้อ เข้าสู่ระบบ", async ({ page }) => {
+  await page.goto("/login");
+  // ข้อนี้รันด้วย --headed เพื่อดูหน้าต่าง browser จริง โค้ดเหมือนข้ออื่นทุกประการ วิธีรันไม่ต้องแก้โค้ด
+  await expect(page.getByRole("heading", { name: "เข้าสู่ระบบ" })).toBeVisible();
 });
 
 
@@ -73,8 +78,10 @@ test.fixme("หน้า /login ต้องมีหัวข้อ เข้�
 // วิธีรัน: เปิด UI mode   pnpm test:ui
 // แนวทาง: โครงเดียวกับข้อ 1 ใน UI mode เลือก test ข้อนี้ที่แถบซ้าย กดปุ่ม ▶ แล้วคลิก action ทีละบรรทัดดูหน้าจอของแต่ละขั้น
 // ------------------------------------------------
-test.fixme("หน้า /stores ต้องมีหัวข้อ สาขาของเรา", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /stores ต้องมีหัวข้อ สาขาของเรา", async ({ page }) => {
+  await page.goto("/stores");
+  // รันใน UI mode แล้วคลิกแต่ละบรรทัดทางซ้ายเพื่อดูภาพหน้าจอ "ก่อน/หลัง" ของ action นั้น
+  await expect(page.getByRole("heading", { name: "สาขาของเรา" })).toBeVisible();
 });
 
 
@@ -86,6 +93,9 @@ test.fixme("หน้า /stores ต้องมีหัวข้อ สาข�
 //   3) เปิด report ดูสาเหตุ   pnpm report   (กด Ctrl+C เพื่อปิด)
 //   4) แก้กลับให้ถูก แล้วรันเฉพาะข้อที่พังรอบก่อน   pnpm test --last-failed
 // ------------------------------------------------
-test.fixme("หน้า /help/ordering ต้องมีหัวข้อ คู่มือการสั่งซื้อ", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 5 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /help/ordering ต้องมีหัวข้อ คู่มือการสั่งซื้อ", async ({ page }) => {
+  await page.goto("/help/ordering");
+  // วิธีฝึก: แก้ชื่อ heading ให้ผิดหนึ่งตัวอักษร รันให้พัง เปิด pnpm report ดูสาเหตุ
+  // แล้วแก้กลับและรัน pnpm test --last-failed ซึ่งจะรันเฉพาะข้อที่พังรอบก่อน
+  await expect(page.getByRole("heading", { name: "คู่มือการสั่งซื้อ" })).toBeVisible();
 });

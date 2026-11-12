@@ -31,8 +31,11 @@ test("หน้าแรกต้องมี title ว่า หน้าแร
 // ข้อ 1: หน้า /products ต้องมี title "สินค้าทั้งหมด | DN Shop"
 // แนวทาง: ทำเหมือนตัวอย่างที่ 1 ทุกอย่าง เปลี่ยนแค่ path ใน page.goto และข้อความใน toHaveTitle
 // ------------------------------------------------
-test.fixme("หน้า /products ต้องมี title ว่า สินค้าทั้งหมด | DN Shop", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /products ต้องมี title ว่า สินค้าทั้งหมด | DN Shop", async ({ page }) => {
+  // path เริ่มด้วย "/" จะถูกต่อท้าย baseURL จึงไม่ต้องเขียน http://localhost:3100 เอง
+  await page.goto("/products");
+  // toHaveTitle รอและลองใหม่เอง จึงไม่ต้องคอยดักว่าหน้าโหลดเสร็จหรือยัง
+  await expect(page).toHaveTitle("สินค้าทั้งหมด | DN Shop");
 });
 
 
@@ -40,8 +43,10 @@ test.fixme("หน้า /products ต้องมี title ว่า สิน�
 // ข้อ 2: หน้า /cart ต้องมี title "ตะกร้าสินค้า | DN Shop"
 // แนวทาง: โครงเดิม ใช้ page.goto("/cart") แล้ว toHaveTitle
 // ------------------------------------------------
-test.fixme("หน้า /cart ต้องมี title ว่า ตะกร้าสินค้า | DN Shop", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /cart ต้องมี title ว่า ตะกร้าสินค้า | DN Shop", async ({ page }) => {
+  await page.goto("/cart");
+  // title ตรวจทั้งข้อความ ต้องตรงทุกตัวอักษรรวมช่องว่างรอบ |
+  await expect(page).toHaveTitle("ตะกร้าสินค้า | DN Shop");
 });
 
 
@@ -49,8 +54,9 @@ test.fixme("หน้า /cart ต้องมี title ว่า ตะกร�
 // ข้อ 3: หน้า /login ต้องมี title "เข้าสู่ระบบ | DN Shop"
 // แนวทาง: โครงเดิม ใช้ page.goto("/login") แล้ว toHaveTitle
 // ------------------------------------------------
-test.fixme("หน้า /login ต้องมี title ว่า เข้าสู่ระบบ | DN Shop", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /login ต้องมี title ว่า เข้าสู่ระบบ | DN Shop", async ({ page }) => {
+  await page.goto("/login");
+  await expect(page).toHaveTitle("เข้าสู่ระบบ | DN Shop");
 });
 
 
@@ -59,6 +65,8 @@ test.fixme("หน้า /login ต้องมี title ว่า เข้า�
 // แนวทาง: โครงเดิม ใช้ page.goto("/stores") แล้ว toHaveTitle
 //        ลองเปลี่ยนข้อความใน toHaveTitle ให้ผิดดูหนึ่งครั้ง เพื่อฝึกอ่าน Expected / Received แล้วแก้กลับ
 // ------------------------------------------------
-test.fixme("หน้า /stores ต้องมี title ว่า สาขาของเรา | DN Shop", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า /stores ต้องมี title ว่า สาขาของเรา | DN Shop", async ({ page }) => {
+  await page.goto("/stores");
+  // ลองแก้ข้อความด้านล่างให้ผิดแล้วรัน จะเห็น Expected (ที่เราเขียน) กับ Received (ที่หน้าเว็บมีจริง) เทียบกันได้เลย
+  await expect(page).toHaveTitle("สาขาของเรา | DN Shop");
 });
