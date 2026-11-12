@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { FlashSale } from "./(components)/FlashSale";
-import { Greeting } from "./(components)/Greeting";
-import { ProductCard } from "./(components)/ProductCard";
-import { Today } from "./(components)/Today";
+import { FlashSale } from "../(components)/FlashSale";
+import { Greeting } from "../(components)/Greeting";
+import { ProductCard } from "../(components)/ProductCard";
+import { Today } from "../(components)/Today";
 import { getData } from "@/lib/session";
 import { listProducts } from "@/lib/shop";
 

@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ProductCard } from "../(components)/ProductCard";
+import { ProductCard } from "../../(components)/ProductCard";
 import type { Product } from "@/lib/types";
 
 type LoadState = "loading" | "done" | "error";

@@ -240,3 +240,63 @@ figure {
   border-radius: 6px;
   font-size: 0.875rem;
 }
+
+.cart-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.cart-list {
+  list-style: none;
+  padding: 0;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+}
+
+.summary dd {
+  margin: 0;
+}
+
+.checkout-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 480px;
+}
+
+.checkout-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.checkout-form fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field-error {
+  color: #b91c1c;
+  margin: 0;
+}
+
+.card-frame {
+  width: 100%;
+  max-width: 480px;
+  height: 340px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.embed {
+  padding: 1rem;
+}
