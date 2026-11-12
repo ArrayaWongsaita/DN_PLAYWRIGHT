@@ -86,11 +86,15 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
 
   catalog: [
     async ({ playwright }, use, workerInfo) => {
+      console.log(`[catalog] worker ${workerInfo.workerIndex}: โหลดรายการสินค้า`);
       const api = await playwright.request.newContext({ baseURL });
       const res = await api.get("/api/products");
+      await expect(res).toBeOK();
       const body = (await res.json()) as { products: CatalogItem[] };
       await api.dispose();
-      await use(body.products);
+      // เก็บเฉพาะ id/name/price และ freeze กันแก้ข้อมูลที่ใช้ร่วมกัน
+      const items = body.products.map(({ id, name, price }) => Object.freeze({ id, name, price }));
+      await use(Object.freeze(items));
     },
     { scope: "worker" },
   ],

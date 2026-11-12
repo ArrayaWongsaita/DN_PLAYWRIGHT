@@ -78,7 +78,7 @@ pnpm test --config lessons/50-reporters/playwright.config.ts
 Remove-Item Env:CI
 ```
 
-(ผู้เขียนทดสอบวิธีตั้งตัวแปรบน macOS ส่วนบน PowerShell เป็นรูปแบบมาตรฐาน ผู้เขียนไม่ได้ทดสอบบน Windows) อย่าลืมคำสั่งบรรทัดสุดท้ายที่ลบตัวแปรออก ไม่งั้นการรันบทอื่นในหน้าต่างเดิมจะอยู่ในโหมด CI ด้วย (เช่น `reuseExistingServer` ของ webServer ถูกปิด)
+อย่าลืมคำสั่งบรรทัดสุดท้ายที่ลบตัวแปรออก ไม่งั้นการรันบทอื่นในหน้าต่างเดิมจะอยู่ในโหมด CI ด้วย (เช่น `reuseExistingServer` ของ webServer ถูกปิด)
 
 ### 4. เปลี่ยน reporter จากบรรทัดคำสั่ง
 
@@ -89,7 +89,7 @@ pnpm test --config lessons/50-reporters/playwright.config.ts --reporter=line
 pnpm test --config lessons/50-reporters/playwright.config.ts --reporter=dot
 ```
 
-เมื่อใช้ `--reporter` ตัวเลือกของ reporter ใน config (เช่น `outputFolder`) จะไม่มีผลด้วย เพราะ config ถูกทับ reporter ที่ไม่มีตัวเลือกเขียนไฟล์ตามค่าเริ่มต้น (html ไปที่ `playwright-report/`) และ `--reporter=json` ที่ไม่มี `outputFile` พิมพ์ JSON ลงหน้าจอ (ผู้เขียนลองแล้ว) จึงควรกำหนดตัวเลือกใน config เสมอ
+เมื่อใช้ `--reporter` ตัวเลือกของ reporter ใน config (เช่น `outputFolder`) จะไม่มีผลด้วย เพราะ config ถูกทับ reporter ที่ไม่มีตัวเลือกเขียนไฟล์ตามค่าเริ่มต้น (html ไปที่ `playwright-report/`) และ `--reporter=json` ที่ไม่มี `outputFile` พิมพ์ JSON ลงหน้าจอ จึงควรกำหนดตัวเลือกใน config เสมอ
 
 ### 5. เปิดรายงาน html
 
@@ -99,7 +99,7 @@ pnpm test --config lessons/50-reporters/playwright.config.ts --reporter=dot
 pnpm exec playwright show-report lessons/50-reporters/output/html
 ```
 
-คำสั่งนี้เปิดเว็บเซิร์ฟเวอร์เล็กๆ (ค่าเริ่มต้นพอร์ต 9323) แล้วค้างอยู่ กด Ctrl+C เพื่อหยุด ในรายงานจะเห็นรายชื่อ test กรองตามสถานะได้ ถ้า test ล้มคลิกเข้าไปดู error, screenshot และ trace ได้ (ตามเอกสารของ Playwright) บทนี้ไม่มี test ที่ล้ม ผู้เขียนตรวจว่าไฟล์ `index.html` ถูกสร้างจริง แต่ไม่ได้เปิดดูในเบราว์เซอร์
+คำสั่งนี้เปิดเว็บเซิร์ฟเวอร์เล็กๆ (ค่าเริ่มต้นพอร์ต 9323) แล้วค้างอยู่ กด Ctrl+C เพื่อหยุด ในรายงานจะเห็นรายชื่อ test กรองตามสถานะได้ ถ้า test ล้มคลิกเข้าไปดู error, screenshot และ trace ได้ (ตามเอกสารของ Playwright) บทนี้ไม่มี test ที่ล้ม เมื่อรันเสร็จจะมีไฟล์ `index.html` ใน `playwright-report/`
 
 ถ้าไม่ระบุโฟลเดอร์ `pnpm report` ของ repo (คือ `playwright show-report`) จะเปิดโฟลเดอร์ `playwright-report/` ของ config หลัก ไม่ใช่ของบทนี้
 
@@ -107,7 +107,7 @@ pnpm exec playwright show-report lessons/50-reporters/output/html
 
 หลังรันด้วย `CI=1` ที่ `output/`:
 
-- `results.json`: มี key ระดับบน `config`, `suites`, `errors`, `stats` โดย `stats` สรุปผล (ที่เราเห็นจริง: `expected: 2, skipped: 3, unexpected: 0, flaky: 0`) ส่วน `suites` มีผลละเอียดทุก test รวมถึง step ที่ตั้งด้วย `test.step` (ผู้เขียนตรวจว่ามีชื่อ step "เปิดหน้าสินค้า" ฯลฯ ในไฟล์)
+- `results.json`: มี key ระดับบน `config`, `suites`, `errors`, `stats` โดย `stats` สรุปผล (ที่เราเห็นจริง: `expected: 2, skipped: 3, unexpected: 0, flaky: 0`) ส่วน `suites` มีผลละเอียดทุก test รวมถึง step ที่ตั้งด้วย `test.step` (จะเห็นชื่อ step เช่น "เปิดหน้าสินค้า" ในไฟล์)
 - `junit.xml`: เริ่มด้วย `<testsuites ... tests="5" failures="0" skipped="3" ...>` แล้วตามด้วย `<testcase name="..." classname="reporters.spec.ts" ...>` ของแต่ละ test เครื่องมือ CI ส่วนใหญ่อ่านรูปแบบนี้เพื่อแสดงรายการ test ในหน้าผลของ build
 
 คำเตือน: reporter `json` และ `junit` บน config นี้เปิดเฉพาะตอนมี `CI` เท่านั้น ถ้าไม่เห็นไฟล์ ให้ตรวจก่อนว่าตั้งตัวแปรแล้ว

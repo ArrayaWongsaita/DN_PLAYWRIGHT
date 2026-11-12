@@ -6,7 +6,13 @@ import { useState, type FormEvent } from "react";
 
 /** รับเฉพาะ path ภายในเว็บ กัน open redirect */
 function safeNext(next: string | undefined): string {
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/account";
+  if (!next || !next.startsWith("/")) return "/account";
+  try {
+    const url = new URL(next, window.location.origin);
+    return url.origin === window.location.origin ? url.pathname + url.search + url.hash : "/account";
+  } catch {
+    return "/account";
+  }
 }
 
 export function LoginClient({ next }: { next?: string }) {

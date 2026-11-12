@@ -111,7 +111,13 @@ export function CheckoutClient({ total, defaultName }: { total: number; defaultN
 
         <label>
           วิธีชำระเงิน
-          <select value={payment} onChange={(e) => setPayment(e.target.value as PaymentMethod)}>
+          <select
+            value={payment}
+            onChange={(e) => {
+              setPayment(e.target.value as PaymentMethod);
+              setCardVerified(false);
+            }}
+          >
             <option value="card">บัตรเครดิต</option>
             <option value="transfer">โอนผ่านธนาคาร</option>
             <option value="cod">เก็บเงินปลายทาง</option>

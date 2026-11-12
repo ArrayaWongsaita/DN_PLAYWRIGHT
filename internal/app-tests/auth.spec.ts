@@ -253,3 +253,19 @@ test("account แสดงยอดคำสั่งซื้อครั้ง
   const history = page.getByRole("list", { name: "ประวัติคำสั่งซื้อ" });
   await expect(history.getByRole("listitem").filter({ hasText: "DN-0001" })).toContainText("1,340 บาท");
 });
+
+// ค่า next ในรูปแบบที่ปรากฏบน query string จริง (ถอดรหัสแล้วเป็น `/\example.com`, `/<TAB>/example.com`, `//example.com`)
+for (const query of ["%2F%5Cexample.com", "/%09/example.com", "%2F%2Fexample.com"]) {
+  test(`login ไม่ redirect ออกนอกเว็บเมื่อ next=${query}`, async ({ page }) => {
+    await page.goto(`/login?next=${query}`);
+    await page.getByLabel("อีเมล").fill("user@dnshop.test");
+    await page.getByLabel("รหัสผ่าน").fill("password123");
+    await page.getByRole("button", { name: "เข้าสู่ระบบ" }).click();
+    await expect(page).toHaveURL(/localhost:3100\/account$/);
+  });
+}
+
+test("login ด้วย next ภายในเว็บไปหน้านั้น", async ({ page }) => {
+  await login(page, undefined, undefined, "/cart");
+  await expect(page).toHaveURL(/\/cart$/);
+});

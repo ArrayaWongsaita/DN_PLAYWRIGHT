@@ -27,8 +27,8 @@ test("หน้าแรกมีสินค้าแนะนำ 3 ชิ้�
 });
 
 test("flash sale นับถอยหลังด้วยนาฬิกาจำลอง", async ({ page }) => {
-  await page.clock.install({ time: new Date("2026-12-31T22:59:00+07:00") });
-  await page.clock.pauseAt(new Date("2026-12-31T23:00:00+07:00"));
+  await page.clock.install({ time: new Date("2030-12-31T22:59:00+07:00") });
+  await page.clock.pauseAt(new Date("2030-12-31T23:00:00+07:00"));
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 2, name: "Flash Sale" })).toBeVisible();
   await expect(page.getByText("ลด 50% ทุกชิ้นในหมวดหนังสือ")).toBeVisible();
@@ -39,8 +39,8 @@ test("flash sale นับถอยหลังด้วยนาฬิกาจ
 });
 
 test("flash sale แสดงจำนวนวันเมื่อเหลือเกิน 1 วัน", async ({ page }) => {
-  await page.clock.install({ time: new Date("2026-12-29T22:59:00+07:00") });
-  await page.clock.pauseAt(new Date("2026-12-29T23:00:00+07:00"));
+  await page.clock.install({ time: new Date("2030-12-29T22:59:00+07:00") });
+  await page.clock.pauseAt(new Date("2030-12-29T23:00:00+07:00"));
   await page.goto("/");
   await expect(page.getByRole("timer", { name: "เวลาที่เหลือ" })).toHaveText("เหลือเวลา 2 วัน 00:59:59");
 });

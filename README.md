@@ -84,6 +84,10 @@ pnpm exec playwright install chromium
 
 รายละเอียดอยู่ในบท 02
 
+หมายเหตุ: บท 23, 41, 42, 43, 45, 48, 49, 50, 51 และ 55 มี config ของตัวเอง ให้รันด้วย `pnpm test --config lessons/NN-name/playwright.config.ts` ตามที่ README ของแต่ละบทบอก (เช่น `pnpm test --config lessons/43-browsers-emulation/playwright.config.ts`) คำสั่ง `pnpm test` ธรรมดาจะข้ามบทเหล่านี้ ส่วน `pnpm verify` รันทุก config ต่อกันให้ทีละตัว
+
+หมายเหตุ: ถ้าคุณเปิด `pnpm app` ค้างไว้แล้ว `git pull` ให้หยุด (`Ctrl+C`) แล้วรัน `pnpm app` ใหม่ เพราะ `pnpm test` จะใช้เซิร์ฟเวอร์ที่รันอยู่แล้วบนพอร์ต 3100 ซึ่งยังเป็นโค้ดเวอร์ชันเก่า
+
 หมายเหตุ: ใน Windows PowerShell บางเวอร์ชันภาษาไทยที่พิมพ์ในคำสั่งอาจแสดงเพี้ยน ถ้า `-g` ไม่เจอ test ให้ใช้คำภาษาอังกฤษที่อยู่ในชื่อ test (เช่น `/cart`) หรือรันด้วยชื่อโฟลเดอร์/ไฟล์แทน
 
 ## วิธีอ่านผล
