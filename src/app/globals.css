@@ -1,7 +1,7 @@
 :root {
   --bg: #ffffff;
   --fg: #111827;
-  --muted: #6b7280;
+  --muted: #4b5563;
   --border: #d1d5db;
   --surface: #f3f4f6;
   --primary: #1d4ed8;
@@ -299,4 +299,95 @@ figure {
 
 .embed {
   padding: 1rem;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.overlay-dialog {
+  max-width: 420px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--fg);
+  padding: 1rem 1.5rem;
+}
+
+.overlay-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-backdrop,
+.page-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.page-overlay {
+  background: var(--bg);
+  z-index: 60;
+}
+
+.modal {
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.board-col {
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface);
+}
+
+.board-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  min-height: 6rem;
+}
+
+.board-col li {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.4rem;
+  cursor: grab;
+}
+
+.hover-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.hover-menu-list {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  min-width: 10rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
 }
