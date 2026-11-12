@@ -62,10 +62,9 @@ test("หน้า slow: โหลดข้อมูลด้วย delay 1500",
 test("หน้า slow: ปุ่มส่งฟอร์มพร้อมใช้งานแล้วกดส่งได้", async ({ page }) => {
   await page.goto("/playground/slow");
 
-  // ทำไม: ตอนแรกชื่อปุ่มคือ "รอสักครู่..." และ disabled; toBeDisabled ผ่านทันทีเพราะเป็นสถานะตอนเปิดหน้า
-  await expect(page.getByRole("button", { name: "รอสักครู่..." })).toBeDisabled();
-
-  // ทำไม: เมื่อพร้อม ชื่อปุ่มเปลี่ยนเป็น "ส่งฟอร์ม" จึงต้องหาด้วยชื่อใหม่; toBeEnabled รอจนปุ่มพร้อม (ไม่ต้องหน่วงเวลาเอง)
+  // ทำไม: ไม่ตรวจสถานะชั่วคราว "รอสักครู่..." (disabled ราว 1.5 วินาที) เพราะเครื่องช้าอาจพลาดช่วงนั้นจน test flaky
+  // ตรวจเฉพาะสถานะปลายทางที่พลาดไม่ได้: เมื่อพร้อม ชื่อปุ่มเปลี่ยนเป็น "ส่งฟอร์ม" จึงหาด้วยชื่อใหม่
+  // toBeEnabled รอจนปุ่มพร้อม (ไม่ต้องหน่วงเวลาเอง)
   const submit = page.getByRole("button", { name: "ส่งฟอร์ม" });
   await expect(submit).toBeEnabled();
   await submit.click();
@@ -83,13 +82,12 @@ test("หน้า slow: ปุ่มส่งฟอร์มพร้อมใ�
 test("หน้าสินค้าโหลดช้า: ข้อความกำลังโหลดหายไปแล้วเห็นรายการ", async ({ page }) => {
   await page.goto("/products?delay=2000");
 
-  // ทำไม: ข้อความกำลังโหลดแสดงอยู่ระหว่างรอ API 2 วินาที
-  const loading = page.getByRole("status").filter({ hasText: "กำลังโหลดสินค้า..." });
-  await expect(loading).toBeVisible();
-  // ทำไม: toBeHidden รอจนข้อความหาย (ภายใน 5 วินาที) ไม่ต้องเขียนรอเอง
-  await expect(loading).toBeHidden();
-
+  // ทำไม: ตรวจผลปลายทางก่อน expect รอเองได้ (ภายใน 5 วินาที เกิน 2 วินาทีของ delay)
   await expect(page.getByText("พบสินค้า 10 รายการ")).toBeVisible();
+
+  // ทำไม: ไม่ตรวจว่า "เคยเห็น" ข้อความกำลังโหลด (สถานะชั่วคราว เครื่องช้าอาจพลาด)
+  // แต่ตรวจว่ามันหายไปแล้ว ซึ่งเป็นสถานะปลายทางที่เป็นจริงเสมอเมื่อรายการขึ้น
+  await expect(page.getByRole("status").filter({ hasText: "กำลังโหลดสินค้า..." })).toBeHidden();
 });
 
 

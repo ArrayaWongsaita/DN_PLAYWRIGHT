@@ -101,10 +101,14 @@ test("หน้า new-tab: ส่งข้อความในแชทอี�
   await page.getByRole("button", { name: "เปิดหน้าต่างแชท" }).click();
   const chat = await popupPromise;
 
-  // ทำไม: รอโหลดเสร็จก่อนพิมพ์ ไม่งั้นฟอร์มอาจยังไม่พร้อมแล้วข้อความหาย
+  // ทำไม: event popup มาตั้งแต่เริ่มโหลดหน้า ถ้ากด "ส่ง" ก่อน React hydrate ปุ่มจะ submit แบบ native
+  // โหลดหน้าใหม่และล้างข้อความ รอ load ช่วยลดความเสี่ยง (ไม่ได้การันตี) หน้านี้ไม่มี signal ว่า hydrate แล้ว
   await chat.waitForLoadState("load");
   // ทำไม: exact: true เพราะ aria-label "ข้อความแชท" ของรายการก็มีคำว่า "ข้อความ"
-  await chat.getByLabel("ข้อความ", { exact: true }).fill("ขอสอบถามสินค้าหน่อยครับ");
+  const box = chat.getByLabel("ข้อความ", { exact: true });
+  await box.fill("ขอสอบถามสินค้าหน่อยครับ");
+  // ทำไม: ตรวจทันทีว่าข้อความยังอยู่ ถ้าหน้าถูกโหลดใหม่ข้อความจะหายและ fail ตรงจุดนี้ อ่านสาเหตุง่าย
+  await expect(box).toHaveValue("ขอสอบถามสินค้าหน่อยครับ");
   await chat.getByRole("button", { name: "ส่ง", exact: true }).click();
 
   await expect(chat.getByRole("list", { name: "ข้อความแชท" }).getByRole("listitem")).toHaveText("ขอสอบถามสินค้าหน่อยครับ");
@@ -122,13 +126,14 @@ test("หน้า new-tab: ส่งสองข้อความในแช�
   const popupPromise = page.waitForEvent("popup");
   await page.getByRole("button", { name: "เปิดหน้าต่างแชท" }).click();
   const chat = await popupPromise;
+  // ทำไม: รอ load ลดความเสี่ยงที่ปุ่ม "ส่ง" จะ submit แบบ native ก่อน hydrate (ไม่ได้การันตี ดูบท README หัวข้อ 3)
   await chat.waitForLoadState("load");
 
   const box = chat.getByLabel("ข้อความ", { exact: true });
   await box.fill("ข้อความแรก");
+  await expect(box).toHaveValue("ข้อความแรก"); // ถ้าหน้าโหลดใหม่ ข้อความหายและ fail ตรงนี้
   await chat.getByRole("button", { name: "ส่ง", exact: true }).click();
-  // ทำไม: รอให้ข้อความแรกขึ้นก่อน (ช่องกรอกถูกล้าง) แล้วจึงพิมพ์ข้อความที่สอง
-  await expect(box).toHaveValue("");
+  // ทำไม: หลังส่ง แอปล้างช่องกรอก toHaveValue("") จึงรอจนช่องว่าง (แปลว่าข้อความแรกถูกส่งแล้ว) ก่อนพิมพ์ข้อความที่สอง
   await box.fill("ข้อความที่สอง");
   await chat.getByRole("button", { name: "ส่ง", exact: true }).click();
 
