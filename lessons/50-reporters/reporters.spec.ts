@@ -44,8 +44,14 @@ test("เพิ่มสินค้าแล้วตะกร้าเป็�
 // แนวทาง: step "เปิดหน้าสาขา" goto("/stores") แล้ว step "ตรวจหัวข้อ" ตรวจ h1 "สาขาของเรา"
 //        รันแล้วเปิดรายงาน html ดูว่า step แสดงเป็นลำดับ
 // ------------------------------------------------
-test.fixme("หน้าสาขาแบ่งเป็น step", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้าสาขาแบ่งเป็น step", async ({ page }) => {
+  // ทำไมใช้ step: ชื่อ step ไปโผล่ในรายงาน html และ json ทำให้อ่านออกว่า test ทำถึงขั้นไหนแล้วล้ม
+  await test.step("เปิดหน้าสาขา", async () => {
+    await page.goto("/stores");
+  });
+  await test.step("ตรวจหัวข้อ", async () => {
+    await expect(page.getByRole("heading", { name: "สาขาของเรา", level: 1 })).toBeVisible();
+  });
 });
 
 
@@ -54,8 +60,10 @@ test.fixme("หน้าสาขาแบ่งเป็น step", async ({ pag
 // แนวทาง: ใส่ { tag: "@smoke" } เป็นอาร์กิวเมนต์ที่สองของ test (ก่อนฟังก์ชัน) ให้ test goto("/help/ordering")
 //        ตรวจ h1 "คู่มือการสั่งซื้อ" แล้วรันด้วย --grep @smoke --reporter=line ดูว่ารันกี่ test
 // ------------------------------------------------
-test.fixme("คู่มือการสั่งซื้อ (smoke)", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ (อย่าลืมใส่ tag) แล้วเปลี่ยน test.fixme เป็น test
+test("คู่มือการสั่งซื้อ (smoke)", { tag: "@smoke" }, async ({ page }) => {
+  // ทำไมใส่ tag: ให้เลือกรันเฉพาะชุดสั้นๆ ด้วย --grep @smoke (tag นี้ถูกรวมในชื่อ test ที่ reporter แสดง)
+  await page.goto("/help/ordering");
+  await expect(page.getByRole("heading", { name: "คู่มือการสั่งซื้อ", level: 1 })).toBeVisible();
 });
 
 
@@ -66,6 +74,12 @@ test.fixme("คู่มือการสั่งซื้อ (smoke)", async 
 //        ข้อความอ่านจาก page.getByRole("heading", { level: 1 }).textContent() ของหน้า /stores
 //        รันแล้วเปิดรายงาน html ที่ test นี้จะเห็นไฟล์แนบ
 // ------------------------------------------------
-test.fixme("แนบข้อความหัวเว็บเข้ารายงาน", async ({ page }, testInfo) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("แนบข้อความหัวเว็บเข้ารายงาน", async ({ page }, testInfo) => {
+  await page.goto("/stores");
+  const heading = page.getByRole("heading", { level: 1 });
+  await expect(heading).toHaveText("สาขาของเรา");
+
+  // ทำไมใช้ attach: ไฟล์แนบถูกเก็บไว้กับ test นี้ในรายงาน (เช่นเก็บข้อมูลที่ช่วยไล่หาสาเหตุตอน test ล้ม)
+  // textContent() อาจเป็น null จึงใส่ ?? "" ให้เป็น string
+  await testInfo.attach("ข้อความหัวเว็บ", { body: (await heading.textContent()) ?? "", contentType: "text/plain" });
 });

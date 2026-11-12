@@ -1,5 +1,4 @@
-# ไฟล์ workflow ของ GitHub Actions สำหรับฝึก (ยังไม่ทำงานที่ไหน เพราะไม่ได้อยู่ใน .github/workflows)
-# งานของคุณ: เติมช่องที่มีเครื่องหมาย 👉 ให้ครบ 6 ช่อง (ข้อ 1-6 ใน README)
+# ไฟล์ workflow ของ GitHub Actions ที่เติมครบแล้ว (เฉลย) ยังไม่ทำงานที่ไหน เพราะไม่ได้อยู่ใน .github/workflows
 # เมื่อใช้จริงในโปรเจกต์ของตัวเอง ให้ copy ไปไว้ที่ .github/workflows/playwright.yml
 name: Playwright Tests
 
@@ -16,30 +15,31 @@ jobs:
       # false = ถ้า shard หนึ่งล้ม shard อื่นยังรันต่อจนจบ (เห็นผลครบทุกชิ้น)
       fail-fast: false
       matrix:
-        # 👉 ข้อ 6: ตรงนี้คือรายการเลข shard ที่ job นี้จะถูกสร้างซ้ำตามจำนวน (ใส่ [1, 2] เพื่อแบ่งเป็น 2 ส่วน)
-        shard: 👉 [ใส่รายการเลข shard]
+        # ข้อ 6: GitHub สร้าง job หนึ่งตัวต่อค่าในรายการนี้ ตัวแรก matrix.shard = 1 ตัวที่สอง = 2 (ต้องเท่ากับตัวหารใน --shard=N/2)
+        shard: [1, 2]
     steps:
       # ดึงโค้ดของ repo มาที่เครื่อง runner
       - uses: actions/checkout@v7
 
-      # 👉 ข้อ 1: ติดตั้ง pnpm ด้วย action ชื่อ pnpm/action-setup เวอร์ชัน v6 (ไม่ต้องใส่ version เพราะอ่านจาก packageManager ใน package.json)
-      - uses: 👉 pnpm/action-setup@?
+      # ข้อ 1: ติดตั้ง pnpm ต้องมาก่อน setup-node เพราะ cache: pnpm ต้องเรียกคำสั่ง pnpm ได้
+      # ไม่ใส่ version เพราะ action อ่านจาก packageManager ใน package.json (จึงตรงกับเครื่องเราเสมอ)
+      - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v7
         with:
-          # 👉 ข้อ 2: เวอร์ชัน Node ของคอร์สนี้ (ดู engines ใน package.json)
-          node-version: 👉 ?
+          # ข้อ 2: ตรงกับ engines.node (>=24) และ .nvmrc ของ repo
+          node-version: 24
           # เก็บ cache ของ pnpm เพื่อให้ติดตั้งเร็วขึ้นในรอบถัดไป
           cache: pnpm
 
-      # 👉 ข้อ 3: ติดตั้งแพ็กเกจตาม pnpm-lock.yaml เป๊ะๆ (ถ้า lockfile ไม่ตรงกับ package.json ให้ล้ม ไม่แก้เอง)
-      - run: 👉 pnpm install ?
+      # ข้อ 3: ติดตั้งตาม pnpm-lock.yaml เป๊ะๆ ถ้า lockfile ไม่ตรงกับ package.json จะล้มแทนที่จะแก้เงียบๆ
+      - run: pnpm install --frozen-lockfile
 
-      # 👉 ข้อ 4: ติดตั้งเฉพาะ browser chromium พร้อมไลบรารีของระบบที่ต้องใช้ (--with-deps)
-      - run: 👉 pnpm exec playwright install ?
+      # ข้อ 4: ติดตั้งเฉพาะ chromium (เร็วกว่าลงทุก browser) --with-deps ลงไลบรารีของระบบที่ browser ต้องใช้บน Linux
+      - run: pnpm exec playwright install --with-deps chromium
 
-      # 👉 ข้อ 5: รัน test ของบทนี้เฉพาะ shard ของ job นี้ (ใช้ตัวแปร matrix: ${{ matrix.shard }} เป็นเลข shard ปัจจุบัน จาก 2 ส่วน)
-      - run: 👉 pnpm test --config lessons/51-ci-github-actions/playwright.config.ts --shard=?
+      # ข้อ 5: รันเฉพาะส่วนของ job นี้ job แรกได้ --shard=1/2 job ที่สองได้ --shard=2/2
+      - run: pnpm test --config lessons/51-ci-github-actions/playwright.config.ts --shard=${{ matrix.shard }}/2
 
       # อัปโหลดรายงานเก็บไว้ดูหลังจบ (ชื่อ artifact ต้องไม่ซ้ำกันระหว่าง shard)
       # if: ${{ !cancelled() }} = อัปโหลดแม้ test จะล้ม (แต่ไม่อัปโหลดถ้ากดยกเลิก)
