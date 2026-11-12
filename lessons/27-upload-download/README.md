@@ -60,9 +60,17 @@ await page.getByRole("link", { name: "ดาวน์โหลดรายกา
 const download = await downloadPromise;
 
 download.suggestedFilename(); // "products.csv" ชื่อที่เซิร์ฟเวอร์เสนอ (Content-Disposition หรือ attribute download)
-await download.saveAs(testInfo.outputPath("products.csv")); // เก็บไฟล์ไว้ใต้ test-results/
-const content = await readFile(await download.path(), "utf8"); // หรืออ่านจากไฟล์ชั่วคราวที่ Playwright เก็บให้
+
+// ทางเลือก ก: เก็บสำเนาไว้ใต้ test-results/ แล้วอ่านจากสำเนา (ได้ไฟล์ไว้ดูเองทีหลังด้วย)
+const savedPath = testInfo.outputPath("products.csv");
+await download.saveAs(savedPath);
+const content = await readFile(savedPath, "utf8");
+
+// ทางเลือก ข: ไม่ต้องเก็บสำเนา อ่านจากไฟล์ชั่วคราวที่ Playwright เก็บให้
+const content2 = await readFile(await download.path(), "utf8");
 ```
+
+สองทางเลือกนี้ใช้อย่างใดอย่างหนึ่งก็พอ (ในตัวอย่างของบทใช้ทางเลือก ก ส่วนข้อ 5 ลองทางเลือก ข)
 
 - ลำดับเหมือนบท 26: สร้างตัวรอก่อน กดทีหลัง
 - `download.suggestedFilename()` เป็นชื่อไฟล์ ไม่ใช่ path

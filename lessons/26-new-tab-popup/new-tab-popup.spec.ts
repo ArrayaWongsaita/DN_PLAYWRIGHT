@@ -39,7 +39,8 @@ test("หน้า new-tab: เปิดหน้าต่างแชทแล�
   await page.getByRole("button", { name: "เปิดหน้าต่างแชท" }).click();
   const chat = await popupPromise;
 
-  // หน้าต่างใหม่เพิ่งเปิด ต้องรอให้โหลดเสร็จก่อน ไม่งั้นพิมพ์เร็วเกินไปก่อนที่ฟอร์มจะพร้อมใช้งาน
+  // event popup มาตั้งแต่ "เริ่ม" โหลดหน้าใหม่ ถ้ากด "ส่ง" ก่อน React hydrate ปุ่มจะ submit แบบ native
+  // ซึ่งโหลดหน้าใหม่และล้างข้อความที่พิมพ์ไว้ รอ load ช่วย "ลดความเสี่ยง" (ไม่ได้การันตีว่า hydrate เสร็จ ดู README หัวข้อ 3)
   await chat.waitForLoadState("load");
   await expect(chat.getByRole("heading", { level: 1, name: "แชทกับร้าน" })).toBeVisible();
 
