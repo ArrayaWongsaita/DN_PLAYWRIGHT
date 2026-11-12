@@ -75,7 +75,7 @@ await expect(error).toBeVisible();
 
 ## จุดที่มักพลาด
 
-- **ใช้ `toBeVisible` ตรวจว่า "ยังไม่ขึ้น"**: `toBeVisible` ล้มเหลวเมื่อ element ไม่มี ซึ่งตรงกับที่ต้องการ แต่ข้อความ error จะอ่านยาก ใช้ `toBeHidden` ให้ความหมายตรงกว่า
+- **ใช้ `toBeVisible` ตรวจว่า "ยังไม่ขึ้น"**: `toBeVisible` ตรวจว่า "ต้องเห็น" จึงไม่เหมาะกับการยืนยันว่า "ยังไม่ขึ้น" ให้ใช้ `toBeHidden` (หรือ `.not.toBeVisible()`)
 - **ใช้ `toBeEmpty` กับข้อความธรรมดาแล้วงง**: ช่องกรอกตรวจ "ค่าในช่อง" ส่วน element อื่นตรวจ "ข้อความข้างใน" ถ้าช่องมีช่องว่าง (space) อยู่ ก็ไม่ถือว่าว่าง
 - **คิดว่า disabled กับ readonly เหมือนกัน**: ทั้งสองทำให้ `toBeEditable()` ไม่ผ่าน แต่มีเฉพาะ disabled ที่ทำให้ `toBeDisabled()` ผ่าน ช่อง "จำนวน" ในหน้าสินค้าเป็น readonly จึงไม่ disabled
 - **ตรวจ checkbox ว่า "ไม่ติ๊ก" ด้วย `toBeChecked()` เฉยๆ**: ต้องใส่ `{ checked: false }`
