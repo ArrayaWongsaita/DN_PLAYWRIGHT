@@ -2,7 +2,7 @@
 
 บทนี้เขียนให้อ่านเองได้ ส่วนที่ใช้ agent เขียนสำหรับ **Claude Code** เท่านั้น ส่วนที่เหลือ (อ่านแผน อ่านโค้ดที่ generator เขียน และฝึกแก้ test ตามแบบ healer) ทำได้โดยไม่ต้องมี AI
 
-สิ่งที่รันแล้วและยืนยันผลได้: `pnpm exec playwright init-agents --help` และ `pnpm exec playwright init-agents --loop=claude` (ใน Playwright 1.65 ได้ไฟล์ตามหัวข้อ 2) และ test ทุกไฟล์ในโฟลเดอร์บทนี้ สิ่งที่ยังไม่ได้ลอง: การเปิด session ของ Claude Code เพื่อให้ planner, generator และ healer ทำงานจริง ดังนั้น `example-plan.md` และ `generated.spec.ts` เป็นตัวอย่างที่เขียนมือตามรูปแบบที่เอกสารและไฟล์นิยามของ agent กำหนด ผลจริงของ agent จะต่างออกไป
+`example-plan.md` และ `generated.spec.ts` เป็นตัวอย่างที่เขียนมือตามรูปแบบที่เอกสารและไฟล์นิยามของ agent กำหนด ผลจริงของ agent จะต่างออกไปในแต่ละครั้ง ส่วน seed test และแบบฝึกหัด healer รันได้ทันทีโดยไม่ต้องมี AI
 
 ## จบบทนี้แล้วทำอะไรได้
 
@@ -50,12 +50,11 @@ pnpm exec playwright init-agents --loop=claude
 | `.claude/agents/playwright-test-healer.md` | นิยาม healer |
 | `.mcp.json` | ตั้งค่า MCP server ชื่อ `playwright-test` รันด้วย `npx playwright run-test-mcp-server` เป็นชุด tool ที่ agent ใช้ (เปิดหน้า รัน test ฯลฯ) |
 | `specs/README.md` | โฟลเดอร์สำหรับเก็บแผน (ว่างๆ) |
-| `lessons/seed.spec.ts` | seed test เริ่มต้นที่ Playwright สร้างให้ (ว่างๆ) |
 
 หมายเหตุสำคัญของโปรเจกต์นี้:
 
-- ไฟล์เหล่านี้อยู่นอกโฟลเดอร์บท จึง **ไม่ถูก commit**: ชื่อทั้งหมดถูกเพิ่มใน `.gitignore` แล้ว (`.claude/agents/playwright-test-*.md`, `.mcp.json`, `specs/`, `lessons/seed.spec.ts`) อย่าใช้ `git add .` โดยไม่ดู `git status`
-- seed ที่ Playwright สร้างไปอยู่ที่ `lessons/seed.spec.ts` เพราะ `testDir` ของ config คือ `lessons` และเป็น test ว่างๆ ถ้ารัน `pnpm test` ทั้งโปรเจกต์มันจะรันด้วย (ผ่านเพราะไม่มีอะไรทำ) เราไม่ใช้ไฟล์นั้น แต่ใช้ seed ของบทนี้ `lessons/53-test-agents/seed.spec.ts` แทน (บอก agent ในคำสั่งเสมอ ดูหัวข้อ 4)
+- ไฟล์เหล่านี้อยู่นอกโฟลเดอร์บท จึง **ไม่ถูก commit**: ชื่อทั้งหมดถูกเพิ่มใน `.gitignore` แล้ว (`.claude/agents/playwright-test-*.md`, `.mcp.json`, `specs/`) อย่าใช้ `git add .` โดยไม่ดู `git status`
+- เรื่อง seed: `init-agents` ค้นหาไฟล์ seed ที่มีอยู่แล้วก่อน (ไฟล์ใดใน `testDir` ที่ชื่อมีคำว่า "seed") ถ้าไม่พบจึงสร้าง `seed.spec.ts` ว่างๆ ให้ใน `testDir` ของ project ใน repo นี้ `testDir` คือ `lessons` และ `lessons/53-test-agents/seed.spec.ts` ชื่อตรงเงื่อนไข คำสั่งจึงไม่สร้างไฟล์ seed เพิ่ม (ผลที่ได้มีแค่ไฟล์ในตารางด้านบน) แต่ถ้ามีหลายไฟล์ที่ชื่อมี "seed" ไม่ควรเดาว่ามันเลือกไฟล์ไหน ให้ระบุไฟล์ seed ในคำสั่งเสมอ (หัวข้อ 4)
 - ให้รันคำสั่งนี้ซ้ำเมื่ออัปเดต Playwright เพื่อได้ agent เวอร์ชันใหม่ (เอกสารของ Playwright แนะนำไว้)
 - ไฟล์ `.mcp.json` เป็นไฟล์ตั้งค่า MCP ระดับโปรเจกต์ Claude Code จะถามให้ยืนยันก่อนใช้ ดูสถานะด้วย `claude mcp list` หรือ `/mcp`
 
@@ -111,7 +110,7 @@ healer ทำสามอย่างซ้ำๆ: อ่านข้อคว�
 
 ## จุดที่มักพลาด
 
-- **ไม่ได้บอก seed**: agent ใช้ `lessons/seed.spec.ts` ที่ว่างเปล่าแทน ทำให้แผนไม่รู้จุดเริ่มต้น ให้ระบุ `lessons/53-test-agents/seed.spec.ts` ในคำสั่ง
+- **ไม่ได้บอก seed**: agent อาจไม่รู้ว่าต้องเริ่มจากไฟล์ไหน แผนจึงไม่มีจุดเริ่มต้นที่ถูกต้อง ให้ระบุ `lessons/53-test-agents/seed.spec.ts` ในคำสั่งเสมอ
 - **commit ไฟล์ที่ init-agents สร้าง**: ไม่ควร (อยู่ใน `.gitignore` แล้ว) ถ้าไฟล์ไม่ถูกซ่อน ตรวจ `.gitignore`
 - **เปิด Claude Code ก่อนรัน `init-agents`**: ต้องเปิด session ใหม่หลังสร้างไฟล์ ไม่งั้นไม่เห็น agent และ MCP server
 - **เชื่อแผนหรือ test ที่ได้โดยไม่รัน**: รันและตรวจเสมอ

@@ -17,5 +17,4 @@ lessons/51-ci-github-actions/output/
 .claude/agents/playwright-test-*.md
 .mcp.json
 specs/
-lessons/seed.spec.ts
 .playwright-cli/
