@@ -1,6 +1,6 @@
 # บทที่ 43: หลาย browser และการจำลองสภาพแวดล้อม (emulation)
 
-บทนี้เขียนให้อ่านเองได้ ตัวอย่างทุกอันรันได้จริง ลองรันแล้วแก้ค่าเล่นดูระหว่างอ่าน
+บทนี้เขียนให้อ่านเองได้ ผู้เขียนรันตัวอย่างและเฉลยทุกข้อจริงบน chromium, webkit และ Mobile Safari แล้ว ส่วน firefox ผู้เขียนไม่ได้รัน (อธิบายในหัวข้อ 10) ลองรันแล้วแก้ค่าเล่นดูระหว่างอ่าน
 
 ## จบบทนี้แล้วทำอะไรได้
 
@@ -37,7 +37,7 @@ projects: [
 ```
 
 - ทุก test จะรัน **ซ้ำครบทุก project** (test 1 ตัว x 4 project = 4 การรัน) ผลรันขึ้นชื่อ project ในวงเล็บเหลี่ยม เช่น `[webkit] › ...`
-- `devices[...]` คือชุดค่าสำเร็จรูป (userAgent, viewport, `isMobile`, `hasTouch`, `deviceScaleFactor` และ browser ที่ใช้) ชื่อ `"iPhone 15"` เป็นชื่อที่มีใน Playwright 1.65 เราตรวจจาก `devices` แล้ว (มี iPhone 13 ถึง 16 ฯลฯ ด้วย) ถ้าเขียนชื่อผิด `devices["..."]` จะได้ `undefined` และ spread แล้วไม่มีค่าอะไรใส่เข้ามา ระวังพิมพ์ชื่อให้ตรง
+- `devices[...]` คือชุดค่าสำเร็จรูป (userAgent, viewport, `isMobile`, `hasTouch`, `deviceScaleFactor` และ browser ที่ใช้) ชื่อ `"iPhone 15"` เป็นชื่อที่มีใน Playwright 1.65 ตรวจจาก `devices` ของ 1.65 แล้ว (มี iPhone 13 ถึง 16 ฯลฯ ด้วย) ถ้าเขียนชื่อผิด `devices["..."]` จะได้ `undefined` และ spread แล้วไม่มีค่าอะไรใส่เข้ามา ระวังพิมพ์ชื่อให้ตรง
 - ใช้รันเฉพาะ project เดียวด้วย `--project`:
 
 ```bash
@@ -73,7 +73,7 @@ test.describe("โหมดมืด", () => {
 });
 ```
 
-`colorScheme: "dark"` ทำให้ `prefers-color-scheme: dark` เป็นจริง แอปจึงเปลี่ยนสี `toHaveCSS` ตรวจค่า style ที่ browser คำนวณแล้ว (ตอน light คือ `rgb(255, 255, 255)`) ตัวอย่างนี้ผ่านทั้ง 4 project
+`colorScheme: "dark"` ทำให้ `prefers-color-scheme: dark` เป็นจริง แอปจึงเปลี่ยนสี `toHaveCSS` ตรวจค่า style ที่ browser คำนวณแล้ว (ตอน light คือ `rgb(255, 255, 255)`) ผู้เขียนรันตัวอย่างนี้ผ่านบน chromium, webkit และ Mobile Safari (firefox ไม่ได้รัน)
 
 ### 5. ตัวอย่างที่ 2: fixture isMobile ให้ test เดียวใช้ได้ทุก project
 
@@ -100,7 +100,9 @@ test.use({
 });
 ```
 
-`geolocation` กำหนดพิกัดที่ browser จะตอบ ส่วน `permissions` คืออนุญาตสิทธิ์ให้เว็บ เราลองตั้งแค่ `geolocation` ไม่ใส่ `permissions` ใน chromium และ webkit แล้วเว็บแสดง `role="alert"` "ไม่ได้รับอนุญาตให้เข้าถึงตำแหน่ง" (ถูกปฏิเสธ) เมื่อใส่ครบจึงได้ "สาขาที่ใกล้ที่สุดคือ สาขาสยาม"
+`geolocation` กำหนดพิกัดที่ browser จะตอบ ส่วน `permissions` คืออนุญาตสิทธิ์ให้เว็บ ผู้เขียนลองตั้งแค่ `geolocation` ไม่ใส่ `permissions` ใน chromium และ webkit แล้วเว็บแสดง `role="alert"` "ไม่ได้รับอนุญาตให้เข้าถึงตำแหน่ง" (ถูกปฏิเสธ) เมื่อใส่ครบจึงได้ "สาขาที่ใกล้ที่สุดคือ สาขาสยาม"
+
+> หมายเหตุ: ตัวอย่างโหมดมืด, geolocation และออฟไลน์ ผู้เขียนยืนยันบน chromium และ webkit (รวม Mobile Safari) เท่านั้น ไม่ได้รันบน firefox
 
 ### 7. เขตเวลา และ page.clock
 
@@ -116,8 +118,8 @@ test("...", async ({ page }) => {
 ```
 
 - `page.clock.install({ time })` ตั้งเวลาปลอมของหน้า ต้องเรียกก่อน `goto` เพื่อให้โค้ดของหน้าเห็นเวลาปลอมตั้งแต่เริ่ม (บท 31)
-- `new Date("2026-06-01T01:00:00Z")` คือ 01:00 UTC เป็นเวลาที่ตรงกันทั่วโลก แต่ "ชั่วโมงบนนาฬิกา" ต่างกันตามเขตเวลา: `Asia/Bangkok` (UTC+7) เป็น 08:00 จึง "ตอนเช้า" ส่วน `America/New_York` เป็น 21:00 ของวันก่อน (เราตั้งวันที่ในฤดูร้อนที่เขตนี้เป็น UTC-4) จึง "ตอนเย็น"
-- เราตรวจสองเขตเวลานี้ผ่านทั้ง chromium, webkit และ Mobile Safari
+- `new Date("2026-06-01T01:00:00Z")` คือ 01:00 UTC เป็นเวลาที่ตรงกันทั่วโลก แต่ "ชั่วโมงบนนาฬิกา" ต่างกันตามเขตเวลา: `Asia/Bangkok` (UTC+7) เป็น 08:00 จึง "ตอนเช้า" ส่วน `America/New_York` เป็น 21:00 ของวันก่อน (ตั้งวันที่ในฤดูร้อนที่เขตนี้เป็น UTC-4) จึง "ตอนเย็น"
+- ผู้เขียนรันสองเขตเวลานี้ผ่านบน chromium, webkit และ Mobile Safari
 
 ### 8. locale: วันที่เปลี่ยนภาษา
 
@@ -130,11 +132,19 @@ await context.setOffline(true);
 await expect(page.getByRole("status").filter({ hasText: "ไม่มีการเชื่อมต่ออินเทอร์เน็ต" })).toBeVisible();
 ```
 
-`setOffline` เป็นของ `context` (ไม่ใช่ `page`) ตอนออฟไลน์ browser ยิง event `offline` แอปจึงแสดงแถบแจ้งเตือน และเมื่อเรียก `setOffline(false)` แถบนี้หาย เราลองแล้วได้ผลเหมือนกันทั้ง chromium และ webkit เรา `goto` ให้เสร็จก่อนค่อยออฟไลน์ เพราะ `goto` ตอนออฟไลน์ไม่ได้หน้า
+`setOffline` เป็นของ `context` (ไม่ใช่ `page`) ตอนออฟไลน์ browser ยิง event `offline` แอปจึงแสดงแถบแจ้งเตือน และเมื่อเรียก `setOffline(false)` แถบนี้หาย ผู้เขียนลองแล้วได้ผลเหมือนกันบน chromium และ webkit (ยืนยันเฉพาะสองตัวนี้ ไม่ได้รันบน firefox) ให้ `goto` ให้เสร็จก่อนค่อยออฟไลน์ เพราะ `goto` ตอนออฟไลน์ไม่ได้หน้า
 
-### 10. ข้อจำกัดที่ต้องรู้: firefox ที่เครื่องผู้เขียนรันไม่ได้
+### 10. ถ้า firefox รันไม่ขึ้น
 
-ตอนเขียนบทนี้ (macOS 27.2 บนเครื่องผู้เขียน) firefox ที่ Playwright 1.65 ดาวน์โหลดมา (build 1572) สตาร์ตไม่ขึ้น ล้มทันทีด้วย `Could not find profile folder` และเราเรียกโปรแกรม firefox ตัวนั้นเองโดยไม่ผ่าน Playwright ก็ได้ข้อความเดียวกัน จึงเป็นปัญหาของ firefox build นั้นกับเครื่องนี้ ไม่ใช่ของ test เราจึง **ไม่ได้ยืนยันผลบน firefox** ในบทนี้ (ตัวอย่างและเฉลยยืนยันบน chromium, webkit และ Mobile Safari) ถ้า firefox บนเครื่องคุณรันได้ปกติ ทุก test ในบทนี้ควรต้องผ่านด้วยถ้าพฤติกรรมของ firefox ตรงกับเอกสาร แต่ถ้าพบ test ที่ผ่านใน browser อื่นแล้วล้มใน firefox ให้บอกผู้สอน (อย่าลบ project firefox ออกโดยไม่บอก) ถ้าเครื่องคุณรัน firefox ไม่ได้เหมือนกัน รันเฉพาะ project ที่ใช้ได้ด้วย `--project`
+ผู้เขียนไม่ได้รัน test ของบทนี้บน firefox (เครื่องที่ใช้เขียนเปิด firefox ไม่ขึ้น) ผลที่ยืนยันแล้วจึงมีเฉพาะ chromium, webkit และ Mobile Safari ส่วน firefox ให้ถือว่ายังไม่ได้ยืนยัน (จะตรวจบน CI หรือเครื่องอื่นภายหลัง)
+
+ถ้า firefox บนเครื่องคุณรันไม่ขึ้น ลองตามลำดับ:
+
+1. อ่านข้อความ error: ถ้าเป็น `Executable doesn't exist` แปลว่ายังไม่ได้ติดตั้ง ให้รัน `pnpm exec playwright install firefox`
+2. ถ้าติดตั้งแล้วแต่ยังเปิดไม่ขึ้น (เช่น `Could not find profile folder`) ให้ลองติดตั้งซ้ำด้วย `pnpm exec playwright install --force firefox` ถ้ายังไม่หาย ให้รันเฉพาะ project อื่นด้วยคำสั่งในหัวข้อ "วิธีรันบทนี้"
+3. แจ้งผู้สอน และ **อย่าลบ project firefox ออกจาก config**
+
+ถ้า test ผ่านใน browser อื่นแต่ล้มใน firefox ที่เปิดขึ้นปกติ ก็แจ้งผู้สอนเช่นกัน
 
 ## จุดที่มักพลาด
 
@@ -145,7 +155,7 @@ await expect(page.getByRole("status").filter({ hasText: "ไม่มีกา�
 - **ตั้ง `timezoneId` แต่ไม่คุมเวลา**: ชั่วโมงขึ้นกับเวลาจริงที่รัน ต้องใช้ `page.clock` ควบคู่
 - **พิมพ์ชื่อใน `devices[...]` ผิด**: ได้ `undefined` ไม่ error ตอน spread (ให้ editor ช่วยเติมชื่อ)
 - **คิดว่าทุก browser เหมือนกัน**: ตัวอย่างในบทนี้ผ่านเหมือนกันใน chromium, webkit, Mobile Safari แต่ test ของแอปอื่นอาจต่าง ต้องรันจริงทุก project
-- **`isMobile` ไม่ใช่การตั้งขนาดจอ**: viewport ต้องตั้งแยก (ใน `devices` ตั้งให้พร้อมกันแล้ว) ในข้อ 1 เราใช้ `viewport` ตรงๆ
+- **`isMobile` ไม่ใช่การตั้งขนาดจอ**: viewport ต้องตั้งแยก (ใน `devices` ตั้งให้พร้อมกันแล้ว) ในข้อ 1 ใช้ `viewport` ตรงๆ
 
 ## หน้าในแอปที่ใช้
 
@@ -163,7 +173,15 @@ pnpm exec playwright install firefox webkit
 pnpm test --config lessons/43-browsers-emulation/playwright.config.ts
 ```
 
-ผลที่ควรได้ก่อนเริ่มทำแบบฝึกหัด (ถ้า browser ครบทั้ง 4 project ใช้งานได้): `8 passed` และ `24 skipped` (ตัวอย่าง 2 ข้อ x 4 project และแบบฝึกหัด 6 test x 4 project) ถ้ารัน firefox ไม่ได้ (หัวข้อ 10) ใช้ `--project=chromium --project=webkit --project="Mobile Safari"` จะได้ `6 passed` และ `18 skipped`
+ผลที่ควรได้ก่อนเริ่มทำแบบฝึกหัด เมื่อทั้ง 4 project เปิดได้: `8 passed` และ `24 skipped` (ตัวอย่าง 2 ข้อ x 4 project และแบบฝึกหัด 6 test x 4 project)
+
+ถ้า firefox รันไม่ขึ้น ให้รันเฉพาะ project อื่น (เครื่องผู้เขียนรันคำสั่งนี้ใน zsh ผ่าน ส่วน PowerShell 5.1 ไม่ได้ลองรันจริง แต่เครื่องหมาย `'` ครอบ argument ใน PowerShell ส่งค่าตรงตัว และเลี่ยงช่องว่างในชื่อ `Mobile Safari` ด้วยเครื่องหมาย `*`):
+
+```bash
+pnpm test --config lessons/43-browsers-emulation/playwright.config.ts '--project=chromium' '--project=webkit' '--project=Mobile*'
+```
+
+ผลที่ได้ตอนรัน 3 project นี้: `6 passed` และ `18 skipped`
 
 ## แบบฝึกหัดในบทนี้
 

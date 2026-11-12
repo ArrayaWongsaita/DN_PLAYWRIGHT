@@ -62,7 +62,7 @@ projects: [
 - `dependencies: ["setup"]` บอกว่าต้องรัน project `setup` ให้ผ่านก่อน ตามเอกสาร Playwright ถ้า setup fail test ใน `chromium` จะไม่ถูกรัน (ดีกว่าให้ทุก test ล้มทีละตัวเพราะยังไม่ login) ผลรันจึงขึ้น `[setup]` ก่อนแล้วตามด้วย `[chromium]`
 - `storageState` ใน `use` เป็น path ของไฟล์ ถ้าเขียนเป็น path แบบ relative จะเทียบกับโฟลเดอร์ที่สั่งรัน (ที่นี่คือ root ของ repo เพราะเราสั่ง `pnpm test` จาก root) ส่วน `auth.setup.ts` ใช้ `import.meta.dirname` ต่อ path ให้ ได้ไฟล์ตำแหน่งเดียวกัน
 
-เราสังเกตตอนรัน `--repeat-each=10` ว่า project `setup` รันครั้งเดียว (ไม่ถูกทำซ้ำ 10 รอบ) ส่วน test ใน `chromium` ถูกทำซ้ำ 10 รอบโดยใช้ไฟล์เดิม
+ข้อสังเกตจากการรันจริง (ไม่ใช่สิ่งที่รับประกัน): ตอนรันด้วย `--repeat-each=10` ผู้เขียนเห็นว่า project `setup` ซึ่งเป็น dependency ไม่ถูกทำซ้ำ ส่วน test ใน `chromium` ถูกทำซ้ำ 10 รอบโดยใช้ไฟล์เดิม
 
 ### 5. อ่าน auth.setup.ts ทีละบรรทัด
 
