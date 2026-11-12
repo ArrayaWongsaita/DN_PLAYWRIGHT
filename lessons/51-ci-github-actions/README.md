@@ -1,6 +1,6 @@
 # บทที่ 51: รัน test บน GitHub Actions (CI) และ sharding
 
-บทนี้เขียนให้อ่านเองได้ บทนี้ต่างจากบทอื่น: ไม่มีแบบฝึกหัดที่เป็นโค้ด test งานของคุณคือ **เติมไฟล์ `playwright.yml`** ให้ครบ และฝึกคำสั่ง `--shard` ในเครื่องตัวเอง ผู้เขียนตรวจว่าไฟล์ yml ที่เติมครบ (ในเฉลย) อ่านเป็น YAML ได้ และรัน `pnpm install --frozen-lockfile` กับคำสั่ง test พร้อม `--shard` บนเครื่องแล้ว แต่ **ไม่ได้รันบน GitHub จริง** (และไม่ได้รัน `playwright install --with-deps` ซึ่งเป็นคำสั่งสำหรับ Linux runner) (ไม่ได้ push ไปไหน) บทนี้จึงบอกตรงๆ ว่าส่วนไหนตรวจแล้วและส่วนไหนยังไม่เคยเห็นทำงานจริง
+บทนี้เขียนให้อ่านเองได้ บทนี้ต่างจากบทอื่น: ไม่มีแบบฝึกหัดที่เป็นโค้ด test งานของคุณคือ **เติมไฟล์ `playwright.yml`** ให้ครบ และฝึกคำสั่ง `--shard` ในเครื่องตัวเอง ไฟล์นี้ใช้เรียนรูปแบบของ workflow สำหรับ runner แบบ Linux (`ubuntu-latest`) ส่วน workflow ที่รันจริงของ repo นี้อยู่ที่ `.github/workflows/ci.yml` ซึ่งรันบน macOS และ Windows
 
 ## จบบทนี้แล้วทำอะไรได้
 
@@ -29,9 +29,9 @@ GitHub ตั้ง environment variable `CI` ให้เองบน runner (�
 
 ### 2. ไฟล์ workflow ของบทนี้
 
-ไฟล์ `lessons/51-ci-github-actions/playwright.yml` เป็นแบบฝึกหัด มีช่องว่างให้เติมที่เครื่องหมาย 👉 **ไฟล์นี้ไม่ได้อยู่ใน `.github/workflows/`** จึงไม่ทำงานเลยจนกว่าคุณจะนำไปวางใน repo ของคุณเอง การที่ repo คอร์สนี้ไม่มีไฟล์ใน `.github/workflows/` เป็นความตั้งใจ
+ไฟล์ `lessons/51-ci-github-actions/playwright.yml` เป็นแบบฝึกหัด มีช่องว่างให้เติมที่เครื่องหมาย 👉 **ไฟล์นี้ไม่ได้อยู่ใน `.github/workflows/`** จึงไม่ทำงานเลยจนกว่าคุณจะนำไปวางใน repo ของคุณเอง ส่วน `.github/workflows/ci.yml` ของ repo นี้เป็น workflow ตรวจโค้ดของคอร์สเอง (ไม่ใช่ไฟล์ที่ต้องเติม) เปิดอ่านเทียบได้
 
-action ที่ใช้ และเวอร์ชันหลัก (ผู้เขียนตรวจกับ release ล่าสุดบน GitHub ตอนเขียนบทนี้):
+action ที่ใช้ และเวอร์ชันหลัก (เวอร์ชันหลักล่าสุดตอนเขียนบทนี้):
 
 | action | ทำอะไร | เวอร์ชันที่ใช้ |
 |---|---|---|
@@ -47,14 +47,14 @@ action ที่ใช้ และเวอร์ชันหลัก (ผู�
 1. `actions/checkout@v7` (เติมให้แล้ว)
 2. **ข้อ 1** ติดตั้ง pnpm: `pnpm/action-setup@v6` ต้องอยู่ **ก่อน** `setup-node` เพราะ `cache: pnpm` ต้องมีคำสั่ง `pnpm` ให้เรียกใช้
 3. **ข้อ 2** `setup-node` ตั้ง `node-version` เป็นเวอร์ชันที่คอร์สนี้ใช้ (ดู `engines.node` ใน `package.json` หรือไฟล์ `.nvmrc`)
-4. **ข้อ 3** `pnpm install --frozen-lockfile`: ติดตั้งตาม `pnpm-lock.yaml` เป๊ะๆ ถ้า lockfile ไม่ตรงกับ `package.json` จะล้มแทนที่จะแก้ไฟล์เอง ซึ่งเป็นสิ่งที่ CI ต้องการ (ผู้เขียนรันคำสั่งนี้บนเครื่องแล้วได้ `Lockfile is up to date`)
+4. **ข้อ 3** `pnpm install --frozen-lockfile`: ติดตั้งตาม `pnpm-lock.yaml` เป๊ะๆ ถ้า lockfile ไม่ตรงกับ `package.json` จะล้มแทนที่จะแก้ไฟล์เอง ซึ่งเป็นสิ่งที่ CI ต้องการ
 5. **ข้อ 4** `pnpm exec playwright install --with-deps chromium`: ติดตั้ง browser เฉพาะ chromium เท่านั้น (เร็วกว่าติดตั้งทั้งสามตัว) และ `--with-deps` ให้ติดตั้งไลบรารีของระบบที่ browser ต้องใช้บน Linux (เอกสาร CI ของ Playwright ระบุคำสั่งนี้)
 6. **ข้อ 5** รัน test: `pnpm test --config lessons/51-ci-github-actions/playwright.config.ts --shard=${{ matrix.shard }}/2`
 7. `actions/upload-artifact@v7` เก็บโฟลเดอร์ `output/` (รายงาน html) ชื่อ artifact ใส่เลข shard ต่อท้ายเพื่อไม่ให้ซ้ำกัน และ `if: ${{ !cancelled() }}` ให้อัปโหลดแม้ test ล้ม
 
 ### 4. sharding และ matrix
 
-sharding คือแบ่ง test ทั้งหมดเป็น N ส่วนเท่าๆ กัน แล้วให้แต่ละเครื่องรันส่วนของตัวเอง คำสั่ง `--shard=1/2` แปลว่า "ส่วนที่ 1 จากทั้งหมด 2 ส่วน" ลองบนเครื่องคุณได้เลย (ผู้เขียนลองแล้ว):
+sharding คือแบ่ง test ทั้งหมดเป็น N ส่วนเท่าๆ กัน แล้วให้แต่ละเครื่องรันส่วนของตัวเอง คำสั่ง `--shard=1/2` แปลว่า "ส่วนที่ 1 จากทั้งหมด 2 ส่วน" ลองบนเครื่องคุณได้เลย:
 
 ```bash
 pnpm test --config lessons/51-ci-github-actions/playwright.config.ts
@@ -62,7 +62,7 @@ pnpm test --config lessons/51-ci-github-actions/playwright.config.ts --shard=1/2
 pnpm test --config lessons/51-ci-github-actions/playwright.config.ts --shard=2/2
 ```
 
-ผลที่ผู้เขียนเห็น:
+ผลที่ควรเห็น:
 
 - คำสั่งแรก (ไม่แบ่ง): `4 passed`
 - `--shard=1/2`: บรรทัดแรก `Running 2 tests using 2 workers, shard 1 of 2` ได้ test หน้าแรกกับหน้าสินค้า
@@ -97,7 +97,7 @@ GitHub จะเปิด job สองตัวพร้อมกัน ตั�
 - **ตั้งชื่อ artifact เหมือนกันทุก shard**: อัปโหลดชนกัน ต้องใส่เลข shard ต่อท้ายชื่อ
 - **ตัวหาร `/2` ไม่ตรงกับจำนวนค่าใน matrix**: ต้องให้จำนวน shard ในคำสั่งเท่ากับจำนวนค่าใน matrix ไม่งั้น test บางส่วนจะไม่ถูกรันเลย
 - **ลืม `fullyParallel: true`** ตอนมีไฟล์ test น้อย: แบ่งระดับไฟล์ได้ไม่สม่ำเสมอ
-- **วางไฟล์ yml ในตำแหน่งผิด**: ต้องเป็น `.github/workflows/` ถึงจะทำงาน และใน repo คอร์สนี้ห้ามวาง
+- **วางไฟล์ yml ในตำแหน่งผิด**: ต้องเป็น `.github/workflows/` ถึงจะทำงาน (ไฟล์ `playwright.yml` ของบทนี้ให้วางใน repo ของคุณเอง ไม่ต้องวางใน repo คอร์สนี้ ซึ่งมี `ci.yml` ของตัวเองอยู่แล้ว)
 
 ## หน้าในแอปที่ใช้
 
@@ -121,7 +121,7 @@ pnpm test --config lessons/51-ci-github-actions/playwright.config.ts
    5. คำสั่งรัน test พร้อม `--shard=${{ matrix.shard }}/2`
    6. รายการ `shard` ใน matrix ให้แบ่งเป็น 2 ส่วน
 2. รัน `--shard=1/2` และ `--shard=2/2` บนเครื่องตัวเอง แล้วจดว่า test ไหนอยู่ shard ไหน
-3. (ลองเอง) ถ้ามี repo ของคุณเอง copy ไฟล์ที่เติมแล้วไปไว้ที่ `.github/workflows/playwright.yml` แล้ว push ดู (ข้อนี้ผู้เขียนไม่ได้ทดสอบบน GitHub)
+3. (ลองเอง) ถ้ามี repo ของคุณเอง copy ไฟล์ที่เติมแล้วไปไว้ที่ `.github/workflows/playwright.yml` แล้ว push ดูผลในแท็บ Actions ของ repo
 
 เฉลยอยู่ที่ branch `solutions` (ไฟล์ yml ที่เติมครบ)
 

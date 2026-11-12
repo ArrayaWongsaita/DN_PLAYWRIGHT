@@ -1,0 +1,60 @@
+# CI ของ repo นี้: ตรวจโค้ด ตรวจชนิดข้อมูล ทดสอบแอป แล้วรันทุกบทด้วย pnpm verify บน macOS และ Windows
+# (ไม่ใช่ workflow ที่บท 51 ให้เติม ไฟล์นั้นอยู่ที่ lessons/51-ci-github-actions/playwright.yml)
+name: CI
+
+on:
+  push:
+    branches: [main, solutions]
+  pull_request:
+    branches: [main, solutions]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      # false = ถ้า OS หนึ่งล้ม อีก OS ยังรันต่อจนจบ จะได้เห็นผลของทั้งสองระบบ
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v7
+
+      # ไม่ระบุ version: action อ่านเวอร์ชัน pnpm จาก packageManager ใน package.json
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # ลง browser ทุกตัว (chromium, firefox, webkit) เพราะบท 43 ใช้ทั้งสามตัว
+      - run: pnpm exec playwright install --with-deps
+
+      - run: pnpm lint
+
+      - run: pnpm typecheck
+
+      - run: pnpm test:app
+
+      # รันทุก config ของคอร์ส (config หลัก + config ของแต่ละบท) ดู scripts/verify.mjs
+      - run: pnpm verify
+
+      # อัปโหลดผลเมื่อมีขั้นตอนไหนล้ม: report หลัก, ผลของแต่ละ test (trace, ภาพหน้าจอ) และโฟลเดอร์ output ของบท 50 และ 51
+      - uses: actions/upload-artifact@v7
+        if: ${{ failure() }}
+        with:
+          name: playwright-report-${{ matrix.os }}
+          path: |
+            playwright-report/
+            test-results/
+            lessons/50-reporters/output/
+            lessons/51-ci-github-actions/output/
+          if-no-files-found: ignore
+          retention-days: 7
