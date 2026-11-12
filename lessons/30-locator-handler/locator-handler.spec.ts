@@ -27,6 +27,8 @@ test("แบนเนอร์คุกกี้: handler ปิดให้ แ
   await expect(page.getByRole("heading", { level: 1, name: "สินค้าทั้งหมด" })).toBeVisible();
 
   await page.getByRole("button", { name: "เพิ่มลงตะกร้า" }).first().click();
+  // ตะกร้าเก็บอยู่ฝั่งเซิร์ฟเวอร์ รอให้ตัวเลขข้างลิงก์ตะกร้าเป็น 1 (เพิ่มสำเร็จ) ก่อนไปหน้าตะกร้า ไม่งั้นอาจไปเห็นตะกร้าว่าง
+  await expect(page.getByTestId("cart-count")).toHaveText("1");
   await page.getByRole("link", { name: /ตะกร้า/ }).click();
 
   await expect(page.getByRole("heading", { level: 1, name: "ตะกร้าสินค้า" })).toBeVisible();
@@ -66,6 +68,8 @@ test.fixme("ไม่มี handler: flow เดียวกับตัวอ�
   // Playwright รอแล้วลองใหม่เรื่อยๆ จนหมดเวลาของ test (Test timeout exceeded) ใน call log จะเห็นว่ามี dialog บังอยู่
   await page.getByRole("link", { name: "ดูสินค้าทั้งหมด" }).click();
   await page.getByRole("button", { name: "เพิ่มลงตะกร้า" }).first().click();
+  // ตะกร้าเก็บอยู่ฝั่งเซิร์ฟเวอร์ รอให้ตัวเลขข้างลิงก์ตะกร้าเป็น 1 (เพิ่มสำเร็จ) ก่อนไปหน้าตะกร้า ไม่งั้นอาจไปเห็นตะกร้าว่าง
+  await expect(page.getByTestId("cart-count")).toHaveText("1");
   await page.getByRole("link", { name: /ตะกร้า/ }).click();
   await expect(page.getByRole("heading", { level: 1, name: "ตะกร้าสินค้า" })).toBeVisible();
 });
@@ -73,7 +77,7 @@ test.fixme("ไม่มี handler: flow เดียวกับตัวอ�
 
 // ------------------------------------------------
 // ข้อ 1: เหมือนตัวอย่างที่ 1 แต่เริ่มที่หน้าสินค้า (/products?cookieBanner=1)
-// แนวทาง: ลงทะเบียน handler ที่กด "ปฏิเสธ" เหมือนตัวอย่างที่ 1 ก่อน goto แล้วเพิ่มสินค้า, ไปตะกร้า, ตรวจว่ามี 1 รายการ
+// แนวทาง: ลงทะเบียน handler ที่กด "ปฏิเสธ" เหมือนตัวอย่างที่ 1 ก่อน goto แล้วเพิ่มสินค้า, รอ cart-count เป็น "1", ไปตะกร้า, ตรวจว่ามี 1 รายการ
 // ------------------------------------------------
 test("แบนเนอร์คุกกี้: เริ่มจากหน้าสินค้าแล้วไปตะกร้า", async ({ page }) => {
   await page.addLocatorHandler(page.getByRole("dialog", { name: "การใช้คุกกี้" }), async (dialog) => {
@@ -83,6 +87,8 @@ test("แบนเนอร์คุกกี้: เริ่มจากหน
   // ลงทะเบียน handler ก่อน goto เสมอ แล้ว flow ข้างล่างไม่ต้องรู้เรื่องแบนเนอร์เลย ไม่ว่ามันจะโผล่ตอนไหน
   await page.goto("/products?cookieBanner=1");
   await page.getByRole("button", { name: "เพิ่มลงตะกร้า" }).first().click();
+  // ตะกร้าอยู่ฝั่งเซิร์ฟเวอร์ รอให้เพิ่มสำเร็จ (cart-count เป็น 1) ก่อนไปหน้าตะกร้า
+  await expect(page.getByTestId("cart-count")).toHaveText("1");
   await page.getByRole("link", { name: /ตะกร้า/ }).click();
 
   await expect(page.getByRole("list", { name: "สินค้าในตะกร้า" }).getByRole("listitem")).toHaveCount(1);
@@ -90,33 +96,38 @@ test("แบนเนอร์คุกกี้: เริ่มจากหน
 
 
 // ------------------------------------------------
-// ข้อ 2: ทั้งสองอย่างพร้อมกัน: เปิดแบนเนอร์คุกกี้และโปรโมชันในหน้าเดียวกัน (/?cookieBanner=1&promo=1)
-// แนวทาง: ลงทะเบียน handler 2 ตัว (dialog "การใช้คุกกี้" กด "ปฏิเสธ" และ dialog "โปรโมชันพิเศษ" กด "ปิด")
-//        แล้วทำ flow เปิดหน้าสินค้าและเพิ่มสินค้า ตรวจ cart-count เป็น "1"
-//        handler ทำงานทีละตัว ถ้า dialog ทั้งสองโผล่คนละเวลา แต่ละตัวถูกเรียกเมื่อ dialog ของมันโผล่
+// ข้อ 2: ลงทะเบียน handler ของทั้งสองป๊อปอัป แล้วใช้กับทั้งสอง URL (/?cookieBanner=1 และ /?promo=1)
+// แนวทาง: ลงทะเบียน handler 2 ตัว (dialog "การใช้คุกกี้" กด "ปฏิเสธ" และ dialog "โปรโมชันพิเศษ" กด "ปิด") ก่อน goto
+//        แล้วทำ flow เปิดหน้าสินค้า เพิ่มสินค้า ตรวจ cart-count เป็น "1" ทำซ้ำกับ URL ทั้งสองแบบด้วยการวนลูปสร้าง test (เหมือนบท 22)
+//        handler ของป๊อปอัปที่ไม่ได้เปิดจะไม่ทำงานเลย จึงลงทะเบียนไว้ทั้งสองตัวได้โดยไม่เสียหาย (เหมาะจะเขียนเป็นฟังก์ชันใช้ซ้ำทุก test)
+//        ข้อควรระวัง: ไม่เปิดสองป๊อปอัปพร้อมกัน (?cookieBanner=1&promo=1) เพราะถ้าโผล่ซ้อนกัน ปุ่มของใบล่างถูกใบบนบัง handler กดไม่ได้ ดู README หัวข้อ 3
 // ------------------------------------------------
-test("แบนเนอร์คุกกี้และโปรโมชันพร้อมกัน", async ({ page }) => {
-  // handler สองตัวสำหรับ dialog สองชนิด แต่ละตัวทำงานเมื่อ dialog ของมันโผล่ (รันทีละตัว)
-  await page.addLocatorHandler(page.getByRole("dialog", { name: "การใช้คุกกี้" }), async (dialog) => {
-    await dialog.getByRole("button", { name: "ปฏิเสธ" }).click();
-  });
-  await page.addLocatorHandler(page.getByRole("dialog", { name: "โปรโมชันพิเศษ" }), async (dialog) => {
-    await dialog.getByRole("button", { name: "ปิด" }).click();
-  });
+// วนลูปสร้าง test สองตัว (ชื่อต้องไม่ซ้ำ จึงใส่ URL ในชื่อ) ลงทะเบียน handler ทั้งสองในทุก test
+// ป๊อปอัปที่ไม่ได้เปิดไม่โผล่ handler ของมันจึงไม่ทำงาน ไม่เสียหายอะไร
+// ไม่เปิดสองใบพร้อมกัน เพราะถ้าโผล่ซ้อนกัน ปุ่มของใบล่างถูกใบบนบัง handler จะติดค้าง (README หัวข้อ 3)
+for (const url of ["/?cookieBanner=1", "/?promo=1"]) {
+  test(`handler ของทั้งสองป๊อปอัปใช้ได้กับ ${url}`, async ({ page }) => {
+    await page.addLocatorHandler(page.getByRole("dialog", { name: "การใช้คุกกี้" }), async (dialog) => {
+      await dialog.getByRole("button", { name: "ปฏิเสธ" }).click();
+    });
+    await page.addLocatorHandler(page.getByRole("dialog", { name: "โปรโมชันพิเศษ" }), async (dialog) => {
+      await dialog.getByRole("button", { name: "ปิด" }).click();
+    });
 
-  await page.goto("/?cookieBanner=1&promo=1");
-  await page.getByRole("link", { name: "ดูสินค้าทั้งหมด" }).click();
-  await page.getByRole("button", { name: "เพิ่มลงตะกร้า" }).first().click();
+    await page.goto(url);
+    await page.getByRole("link", { name: "ดูสินค้าทั้งหมด" }).click();
+    await page.getByRole("button", { name: "เพิ่มลงตะกร้า" }).first().click();
 
-  // cart-count เป็น 1 แปลว่าการคลิกเพิ่มสินค้าผ่านไปได้ ไม่ถูกบัง
-  await expect(page.getByTestId("cart-count")).toHaveText("1");
-});
+    // cart-count เป็น 1 แปลว่าการคลิกเพิ่มสินค้าผ่านไปได้ ไม่ถูกบัง
+    await expect(page.getByTestId("cart-count")).toHaveText("1");
+  });
+}
 
 
 // ------------------------------------------------
 // ข้อ 3: นับจำนวนครั้งที่ handler ทำงาน (ไม่เกิน 1 ครั้ง)
 // แนวทาง: ลงทะเบียน handler ของแบนเนอร์คุกกี้ที่เพิ่มตัวนับ (let count = 0; ... count++) แล้วกด "ปฏิเสธ"
-//        ทำ flow เหมือนตัวอย่างที่ 1 (goto("/?cookieBanner=1") > ดูสินค้าทั้งหมด > ตะกร้า) จบด้วย expect(count).toBeLessThanOrEqual(1)
+//        ทำ flow เหมือนตัวอย่างที่ 1 (goto("/?cookieBanner=1") > ดูสินค้าทั้งหมด > เพิ่มสินค้า > รอ cart-count เป็น "1" > ตะกร้า) จบด้วย expect(count).toBeLessThanOrEqual(1)
 //        ทำไมไม่ใช่ toBe(1): ถ้า flow เสร็จก่อนแบนเนอร์โผล่ handler จะไม่ทำงานเลย (0 ครั้ง) แต่แบนเนอร์ถูกปิดแล้วไม่โผล่อีก จึงไม่เกิน 1
 //        (อย่ารอแบนเนอร์ด้วย expect(dialog).toBeVisible() เพราะ expect ก็ทำให้ handler ทำงานและปิดแบนเนอร์ก่อน ดู README หัวข้อ 3)
 // ------------------------------------------------
@@ -131,6 +142,8 @@ test("นับจำนวนครั้งที่ handler ทำงาน",
   await page.goto("/?cookieBanner=1");
   await page.getByRole("link", { name: "ดูสินค้าทั้งหมด" }).click();
   await page.getByRole("button", { name: "เพิ่มลงตะกร้า" }).first().click();
+  // ตะกร้าอยู่ฝั่งเซิร์ฟเวอร์ รอให้เพิ่มสำเร็จ (cart-count เป็น 1) ก่อนไปหน้าตะกร้า
+  await expect(page.getByTestId("cart-count")).toHaveText("1");
   await page.getByRole("link", { name: /ตะกร้า/ }).click();
   await expect(page.getByRole("heading", { level: 1, name: "ตะกร้าสินค้า" })).toBeVisible();
 
@@ -141,33 +154,38 @@ test("นับจำนวนครั้งที่ handler ทำงาน",
 
 
 // ------------------------------------------------
-// ข้อ 4: ถอด handler ออกด้วย page.removeLocatorHandler แล้วแบนเนอร์จะบังการคลิกจริง
-// แนวทาง: เก็บ locator ของ dialog "การใช้คุกกี้" ไว้ในตัวแปร ลงทะเบียน handler ด้วย locator ตัวนั้น แล้วถอดทันทีด้วย
-//        await page.removeLocatorHandler(dialog) (ต้องส่ง locator ตัวเดิมที่ใช้ตอนลงทะเบียน)
-//        goto("/?cookieBanner=1") แล้วรอให้ dialog โผล่ด้วย expect(dialog).toBeVisible() (ตอนนี้ไม่มี handler จึงไม่มีใครปิดให้)
-//        คลิกลิงก์ "ดูสินค้าทั้งหมด" ด้วย { timeout: 2000 } ต้อง reject:
-//        await expect(page.getByRole("link", { name: "ดูสินค้าทั้งหมด" }).click({ timeout: 2000 })).rejects.toThrow()
-//        สุดท้ายกด "ปฏิเสธ" เองแล้วตรวจว่า dialog หาย (toBeHidden)
+// ข้อ 4: handler ทำงานแล้วถอดออกด้วย page.removeLocatorHandler หลังถอดแล้ว handler ต้องไม่ทำงานอีก
+// แนวทาง: goto("/") เก็บ locator ของ h1 "DN Shop" ไว้ในตัวแปร (หัวข้อมองเห็นตลอด ทำให้ handler ทำงานได้แน่นอนไม่สุ่ม)
+//        ลงทะเบียน handler ด้วย locator นั้นที่ทำแค่ count++ ใส่ { noWaitAfter: true } (เพราะหัวข้อไม่หายหลัง handler ดู README หัวข้อ 5)
+//        hover ลิงก์ "หน้าแรก" หนึ่งครั้ง ตรวจ expect(count).toBeGreaterThan(0) แล้วจำค่าไว้ (const before = count)
+//        (หนึ่ง action อาจทำให้ handler ทำงานมากกว่า 1 ครั้ง เพราะ Playwright ตรวจก่อนลองทำและตรวจซ้ำระหว่างทาง จึงไม่ตรวจว่า count เท่ากับ 1 พอดี)
+//        แล้ว await page.removeLocatorHandler(หัวข้อ) (ต้องส่ง locator ตัวเดิมที่ใช้ตอนลงทะเบียน) hover อีกครั้ง ตรวจว่า count ยังเท่า before
+//        (ส่วนแบนเนอร์ที่บังการคลิกเมื่อไม่มี handler ดูตัวอย่างที่ 3)
 // ------------------------------------------------
-test("ถอด handler แล้วแบนเนอร์บังการคลิก", async ({ page }) => {
-  const dialog = page.getByRole("dialog", { name: "การใช้คุกกี้" });
-  await page.addLocatorHandler(dialog, async () => {
-    await dialog.getByRole("button", { name: "ปฏิเสธ" }).click();
-  });
+test("ถอด handler แล้ว handler ไม่ทำงานอีก", async ({ page }) => {
+  await page.goto("/");
 
-  // ถอดด้วย locator ตัวเดิม หลังจากนี้ไม่มีใครปิดแบนเนอร์ให้
-  await page.removeLocatorHandler(dialog);
+  // handler บน h1 ที่มองเห็นตลอด จึงทำงานแน่นอนเมื่อมี action (ไม่สุ่มเหมือนแบนเนอร์) noWaitAfter เพราะ h1 ไม่หายหลังรัน handler
+  let count = 0;
+  const heading = page.getByRole("heading", { level: 1, name: "DN Shop" });
+  await page.addLocatorHandler(
+    heading,
+    async () => {
+      count++;
+    },
+    { noWaitAfter: true },
+  );
 
-  await page.goto("/?cookieBanner=1");
-  // ไม่มี handler แล้ว expect นี้จึงแค่รอให้ dialog โผล่ (สูงสุด 5 วินาที) ไม่ถูกปิดก่อน
-  await expect(dialog).toBeVisible();
+  const home = page.getByRole("link", { name: "หน้าแรก" });
+  await home.hover();
+  // action เดียวอาจเรียก handler มากกว่า 1 ครั้ง (ตรวจก่อนทำและตรวจซ้ำระหว่างทาง) จึงตรวจแค่ว่าทำงานแล้ว
+  expect(count).toBeGreaterThan(0);
+  const before = count;
 
-  // แบนเนอร์บังอยู่ คลิกจึงรอจนหมด timeout 2 วินาทีแล้ว reject
-  await expect(page.getByRole("link", { name: "ดูสินค้าทั้งหมด" }).click({ timeout: 2000 })).rejects.toThrow();
-
-  // ต้องปิดเอง
-  await dialog.getByRole("button", { name: "ปฏิเสธ" }).click();
-  await expect(dialog).toBeHidden();
+  // ถอดด้วย locator ตัวเดิม หลังจากนี้ action ต่อไปไม่เรียก handler อีก
+  await page.removeLocatorHandler(heading);
+  await home.hover();
+  expect(count).toBe(before);
 });
 
 

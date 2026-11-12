@@ -53,13 +53,13 @@ Playwright เรียก handler ตอนที่ **กำลังทำ ac
 
 โยงกับบท 24: `click` รอเงื่อนไข "receives events" (ไม่ถูกบัง) ถ้า modal บังอยู่ การคลิกจะลองซ้ำเรื่อยๆ **ในแต่ละรอบที่ลองซ้ำ Playwright เช็ค handler ก่อน** พอ handler ปิด modal การคลิกก็ผ่านตามปกติ ถ้าไม่มี handler ก็รอจนหมดเวลา
 
-ข้อควรรู้จากเอกสาร (และจากที่ลองรันจริง ตอนรันจะเห็นในรายงานว่า `intercepting action to run the handler`):
+ข้อควรรู้จากเอกสาร (และจากที่ลองรันจริง ตอน test ติดขัดจะเห็นใน call log ของ Playwright 1.65 ข้อความทำนอง `intercepting action to run the handler` ซึ่งข้อความอาจต่างไปตามเวอร์ชัน):
 
 - **ถ้าไม่มี action หรือ assertion เลย handler จะไม่ทำงาน**: ถ้าแบนเนอร์โผล่ตอนที่ test ไม่ได้ทำอะไรกับหน้า (เช่น กำลังรอ `goto`) handler ยังไม่ทำงาน มันทำงานตอน action/assertion ถัดไป
 - **assertion ที่รอเองก็ทำให้ handler ทำงานด้วย**: เช่น `await expect(dialog).toBeVisible()` ในขณะมี handler ของ dialog เดียวกัน handler จะปิด dialog ก่อน แล้ว assertion จึงล้มเหลว (เพราะ dialog หายไปแล้ว) อย่าใช้ท่านี้ถ้ามี handler ของ dialog นั้นอยู่
 - **เวลาที่ handler ใช้นับรวมกับ timeout ของ action/assertion นั้น**: handler ที่ช้ามากทำให้ action หมดเวลาได้
 - **handler เปลี่ยนสถานะของหน้ากลาง test**: เช่น โฟกัสย้าย เมาส์ขยับ ให้ใช้ action ที่ทำจบในตัว (เช่น `locator.press("Enter")` แทน `focus()` แล้ว `keyboard.press`) เพราะ handler อาจแทรกระหว่างสองคำสั่ง
-- ลงทะเบียนได้หลาย handler (ข้อ 2 ในแบบฝึกหัด) แต่รันทีละตัว และ handler ไม่ควรพึ่งการทำงานของ handler อื่น
+- ลงทะเบียนได้หลาย handler (ข้อ 2 ในแบบฝึกหัด) แต่รันทีละตัว และ handler ไม่ควรพึ่งการทำงานของ handler อื่น ตัวอย่างที่ควรระวัง: ถ้าป๊อปอัปสองใบโผล่ซ้อนกัน (เปิด `?cookieBanner=1&promo=1` พร้อมกัน) ปุ่มของใบล่างจะถูกใบบนบัง handler ของใบล่างคลิกไม่ได้ และ handler ของใบบนรันไม่ได้ในเวลาเดียวกัน ทำให้ติดค้างจนหมดเวลาเป็นบางรอบ (เราเจอจริงตอนลองรันซ้ำ) บทนี้จึงไม่เปิดสองใบพร้อมกัน
 
 ### 4. เมื่อไหร่ไม่ควรใช้ handler
 
@@ -80,13 +80,13 @@ await page.addLocatorHandler(locator, handler, { noWaitAfter: true });
 ### 6. ถอด handler: removeLocatorHandler
 
 ```ts
-const dialog = page.getByRole("dialog", { name: "การใช้คุกกี้" });
-await page.addLocatorHandler(dialog, async () => { /* ... */ });
-// ...
-await page.removeLocatorHandler(dialog); // ส่ง locator ตัวเดิมที่ใช้ตอนลงทะเบียน
+const heading = page.getByRole("heading", { level: 1, name: "DN Shop" });
+await page.addLocatorHandler(heading, async () => { /* ... */ }, { noWaitAfter: true });
+// ... action ต่างๆ ที่ทำให้ handler ทำงาน ...
+await page.removeLocatorHandler(heading); // ส่ง locator ตัวเดิมที่ใช้ตอนลงทะเบียน
 ```
 
-ใช้เมื่อช่วงหนึ่งของ test ต้องการให้ป๊อปอัปอยู่ เช่น จะตรวจเนื้อหาของแบนเนอร์เอง ถอดแล้ว Playwright จะไม่ปิดให้อีก (แบนเนอร์จะบังการคลิกเหมือนไม่มี handler)
+ใช้เมื่อช่วงหนึ่งของ test ต้องการให้ป๊อปอัปอยู่โดยไม่มีใครปิดให้ เช่น จะตรวจเนื้อหาของแบนเนอร์เอง ถอดแล้ว Playwright จะไม่เรียก handler อีก (ถ้าเป็นแบนเนอร์จริงมันก็จะบังการคลิกเหมือนไม่มี handler ดูตัวอย่างที่ 3) ในแบบฝึกหัดข้อ 4 เราใช้ handler บน `h1` ที่มองเห็นตลอดเพื่อให้เห็นแน่นอนว่า handler ทำงานก่อนถอด และไม่ทำงานหลังถอด
 
 ## จุดที่มักพลาด
 
@@ -120,9 +120,9 @@ pnpm test 30-locator-handler --repeat-each=10
 ## แบบฝึกหัดในบทนี้
 
 1. ใช้ handler ปิดแบนเนอร์คุกกี้ โดยเริ่ม flow ที่หน้าสินค้า
-2. เปิดแบนเนอร์คุกกี้และโปรโมชันพร้อมกัน ใช้ handler 2 ตัว
+2. ลงทะเบียน handler ของทั้งสองป๊อปอัป แล้วใช้กับทั้ง `?cookieBanner=1` และ `?promo=1`
 3. นับจำนวนครั้งที่ handler ทำงาน (ไม่เกิน 1)
-4. ถอด handler ด้วย `removeLocatorHandler` แล้วดูแบนเนอร์บังการคลิก
+4. ถอด handler ด้วย `removeLocatorHandler` แล้วตรวจว่า handler ไม่ทำงานอีก
 5. ใช้ `times` และ `noWaitAfter` กับ handler บน element ที่ไม่หายไป
 
 ## อ่านเพิ่ม

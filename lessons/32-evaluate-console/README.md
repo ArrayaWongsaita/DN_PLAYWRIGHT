@@ -25,7 +25,7 @@ const version = await page.evaluate(() => window.dnShop.version);
 ฟังก์ชันที่ส่งให้ `evaluate` **ถูกส่งไปรันใน browser** (มีสิทธิ์เข้าถึง `window`, `document` เหมือนโค้ดของหน้า) แล้วค่าที่ `return` ถูกส่งกลับมาให้ test ใน Node กฎสำคัญ:
 
 - ฟังก์ชันนั้นเห็นตัวแปรของ test ไม่ได้ เพราะมันไปรันอีก process หนึ่ง (ดูหัวข้อ 2)
-- ค่าที่คืนกลับต้องแปลงเป็น JSON ได้ (ข้อความ ตัวเลข บูลีน อาร์เรย์ object ธรรมดา) ส่งฟังก์ชันหรือ element กลับมาไม่ได้
+- ค่าที่คืนกลับต้อง "ส่งข้ามระหว่าง browser กับ Node ได้" (serializable): ข้อความ ตัวเลข บูลีน `null` `undefined` อาร์เรย์ object ธรรมดา รวมถึงชนิดอย่าง `Date` และ `NaN` แต่ส่ง DOM element หรือฟังก์ชันที่ผูกกับตัวแปรภายนอก (closure) กลับมาไม่ได้
 - ถ้าฟังก์ชันคืน Promise จะรอให้เสร็จแล้วให้ค่า (ใส่ `async` ได้)
 - `evaluate` ไม่รอเหมือน locator: มันรันทันทีที่สั่ง
 
@@ -45,7 +45,7 @@ const text = await page.evaluate((prefix) => `${prefix}${(window as DnShopWindow
 // text = "v1.0.0"
 ```
 
-อาร์กิวเมนต์ตัวที่สองของ `evaluate` ถูกส่งต่อเข้าไปเป็นพารามิเตอร์ของฟังก์ชัน ผ่านการแปลงเป็น JSON ส่งได้ **ค่าเดียว** ถ้าต้องการหลายค่าให้ห่อเป็น object หรือ array:
+อาร์กิวเมนต์ตัวที่สองของ `evaluate` ถูกส่งต่อเข้าไปเป็นพารามิเตอร์ของฟังก์ชัน ซึ่งต้องเป็นค่าที่ส่งข้าม process ได้แบบเดียวกัน (ข้อความ ตัวเลข อาร์เรย์ object ธรรมดา `Date` ฯลฯ ไม่ใช่ DOM element หรือฟังก์ชัน) ส่งได้ **ค่าเดียว** ถ้าต้องการหลายค่าให้ห่อเป็น object หรือ array:
 
 ```ts
 const sum = await page.evaluate(({ a, b }) => a + b, { a: 2, b: 3 }); // 5
@@ -123,7 +123,7 @@ await expect.poll(async () => (await page.pageErrors()).map((e) => e.message)).t
 - **กดปุ่มก่อนหน้า hydrate**: onClick ยังไม่ผูก การกดไม่เกิดผล รอสัญญาณพร้อมก่อน (หัวข้อ 3)
 - **ลงทะเบียน `page.on("console")` หลัง `goto`**: พลาดข้อความตอนโหลด (ถ้าใช้ `consoleMessages()` ไม่มีปัญหานี้)
 - **ตรวจชนิด `console.warn` ว่า `"warn"`**: ที่ถูกคือ `"warning"`
-- **คาดว่า error ใน `onClick` ของ React จะถึง `pageerror`**: โค้ดของเราโยนนอก event handler ด้วย `setTimeout` จึงเป็น uncaught จริง
+- **คาดว่า `pageerror` จะจับแค่ error แบบเดียว**: `pageerror` คือ error ที่ไม่มีใครดักในหน้า (uncaught) ปุ่ม "ทำให้ error" ของหน้านี้โยน error จาก `setTimeout` และเราลองรันจริงแล้วว่าถึง `pageerror` พร้อมข้อความ "เกิดข้อผิดพลาดที่ไม่คาดคิด" ส่วน error ที่โค้ดดักไว้เอง (`try/catch`) หรือที่แค่เขียนด้วย `console.error(...)` จะไม่ใช่ `pageerror` (อย่างหลังมาทาง `console` ชนิด `error`) บทนี้ไม่ได้ทดสอบ error ที่โยนตรงใน `onClick` ของ React จึงไม่ยืนยันว่าเป็นอย่างไร
 - **คืน element หรือฟังก์ชันจาก `evaluate`**: ส่งกลับไม่ได้ ให้คืนเป็นข้อมูลธรรมดา
 
 ## หน้าในแอปที่ใช้
