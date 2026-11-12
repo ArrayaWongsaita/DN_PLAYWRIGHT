@@ -10,3 +10,4 @@ blob-report
 lessons/45-visual-comparison/**/*-snapshots/
 .superpowers
 docs/superpowers
+*.local.har
