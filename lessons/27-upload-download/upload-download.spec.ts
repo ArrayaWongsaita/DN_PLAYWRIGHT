@@ -58,8 +58,15 @@ test("หน้า files: ดาวน์โหลดรายการสิน
 // ข้อ 1: เหมือนตัวอย่างที่ 1 แต่ใช้ไฟล์ notes.txt
 // แนวทาง: setInputFiles(fixture("notes.txt")) แล้วตรวจรายการด้วย regex /^notes\.txt \(\d+ bytes\)$/
 // ------------------------------------------------
-test.fixme("หน้า files: เลือกไฟล์ notes.txt", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า files: เลือกไฟล์ notes.txt", async ({ page }) => {
+  await page.goto("/playground/files");
+
+  // ทำไม: path ของไฟล์ตัวอย่างสร้างด้วย fixture() จึงใช้ได้ทุกเครื่อง ไม่ผูกกับ path ของใคร
+  await page.getByLabel("เลือกไฟล์ (หลายไฟล์ได้)").setInputFiles(fixture("notes.txt"));
+
+  // ทำไม: ใช้ regex กับขนาดไฟล์ เผื่อเนื้อหาไฟล์ตัวอย่างถูกแก้ภายหลัง
+  const selected = page.getByRole("list", { name: "ไฟล์ที่เลือก" });
+  await expect(selected.getByRole("listitem")).toHaveText(/^notes\.txt \(\d+ bytes\)$/);
 });
 
 
@@ -68,8 +75,16 @@ test.fixme("หน้า files: เลือกไฟล์ notes.txt", async ({
 // แนวทาง: ส่ง array ของ path ให้ setInputFiles([fixture("profile.png"), fixture("photo.jpg")])
 //        ตรวจจำนวนรายการ toHaveCount(2) และข้อความแต่ละรายการ toHaveText([regex, regex]) ตามลำดับ
 // ------------------------------------------------
-test.fixme("หน้า files: เลือกหลายไฟล์พร้อมกัน", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า files: เลือกหลายไฟล์พร้อมกัน", async ({ page }) => {
+  await page.goto("/playground/files");
+
+  // ทำไม: ส่ง array ของ path เพราะ input นี้มี attribute multiple
+  await page.getByLabel("เลือกไฟล์ (หลายไฟล์ได้)").setInputFiles([fixture("profile.png"), fixture("photo.jpg")]);
+
+  const items = page.getByRole("list", { name: "ไฟล์ที่เลือก" }).getByRole("listitem");
+  await expect(items).toHaveCount(2);
+  // ทำไม: toHaveText แบบ array ตรวจครบทุกรายการตามลำดับที่เลือก
+  await expect(items).toHaveText([/^profile\.png \(\d+ bytes\)$/, /^photo\.jpg \(\d+ bytes\)$/]);
 });
 
 
@@ -79,8 +94,23 @@ test.fixme("หน้า files: เลือกหลายไฟล์พร้
 //        แต่หน้านี้อัปเดตรายการเมื่อ input เกิด change event ซึ่ง setInputFiles([]) ก็ทำให้เกิดด้วย
 //        จากนั้นเลือกไฟล์อีกครั้ง กดปุ่ม "ล้างไฟล์" แล้วตรวจว่ารายการเหลือ 0 อีกครั้ง
 // ------------------------------------------------
-test.fixme("หน้า files: ล้างไฟล์ที่เลือก", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า files: ล้างไฟล์ที่เลือก", async ({ page }) => {
+  await page.goto("/playground/files");
+  const input = page.getByLabel("เลือกไฟล์ (หลายไฟล์ได้)");
+  const items = page.getByRole("list", { name: "ไฟล์ที่เลือก" }).getByRole("listitem");
+
+  await input.setInputFiles(fixture("notes.txt"));
+  await expect(items).toHaveCount(1);
+
+  // ทำไม: ส่ง array ว่างคือการล้างไฟล์ที่เลือก และหน้าได้รับ change event ตามปกติ
+  await input.setInputFiles([]);
+  await expect(items).toHaveCount(0);
+
+  // วิธีที่สอง: ผู้ใช้กดปุ่ม "ล้างไฟล์"
+  await input.setInputFiles(fixture("notes.txt"));
+  await expect(items).toHaveCount(1);
+  await page.getByRole("button", { name: "ล้างไฟล์" }).click();
+  await expect(items).toHaveCount(0);
 });
 
 
@@ -89,8 +119,17 @@ test.fixme("หน้า files: ล้างไฟล์ที่เลือก
 // แนวทาง: setInputFiles({ name: "hello.txt", mimeType: "text/plain", buffer: Buffer.from("hello") })
 //        ตรวจรายการเป็น "hello.txt (5 bytes)"
 // ------------------------------------------------
-test.fixme("หน้า files: อัปโหลดจาก buffer", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า files: อัปโหลดจาก buffer", async ({ page }) => {
+  await page.goto("/playground/files");
+
+  // ทำไม: buffer สร้างไฟล์ในหน่วยความจำ ไม่ต้องมีไฟล์ใน fixtures; "hello" มี 5 ไบต์
+  await page.getByLabel("เลือกไฟล์ (หลายไฟล์ได้)").setInputFiles({
+    name: "hello.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("hello"),
+  });
+
+  await expect(page.getByRole("list", { name: "ไฟล์ที่เลือก" }).getByRole("listitem")).toHaveText("hello.txt (5 bytes)");
 });
 
 
@@ -99,8 +138,20 @@ test.fixme("หน้า files: อัปโหลดจาก buffer", async ({
 // แนวทาง: เหมือนตัวอย่างที่ 2 แต่ลิงก์ "ดาวน์โหลดคู่มือ (TXT)" ลองอ่านเนื้อหาด้วย await download.path()
 //        (คืน path ของไฟล์ชั่วคราว) แล้ว readFile ตรวจ toContain
 // ------------------------------------------------
-test.fixme("หน้า files: ดาวน์โหลดคู่มือ guide.txt", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 5 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า files: ดาวน์โหลดคู่มือ guide.txt", async ({ page }) => {
+  await page.goto("/playground/files");
+
+  // ทำไม: สร้าง promise รอ download ก่อนกดลิงก์ (ไม่ await) ไม่งั้นอาจพลาด event
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("link", { name: "ดาวน์โหลดคู่มือ (TXT)" }).click();
+  const download = await downloadPromise;
+
+  expect(download.suggestedFilename()).toBe("guide.txt");
+
+  // ทำไม: download.path() คืน path ของไฟล์ชั่วคราวที่ Playwright เก็บให้ (Promise จึงต้อง await) อ่านเนื้อหาได้เลย
+  // ไม่ได้สร้างไฟล์ใน repo
+  const content = await readFile(await download.path(), "utf8");
+  expect(content).toContain("คู่มือการใช้งาน DN Shop");
 });
 
 
@@ -110,6 +161,18 @@ test.fixme("หน้า files: ดาวน์โหลดคู่มือ gu
 //        setInputFiles ที่ช่อง "รูปโปรไฟล์" ด้วย fixture("photo.jpg") ตรวจ "ไฟล์ที่เลือก: photo.jpg"
 //        กดปุ่ม "บันทึกรูป" แล้วตรวจ role="status" ข้อความ "บันทึกรูปโปรไฟล์แล้ว"
 // ------------------------------------------------
-test.fixme("หน้า account: อัปโหลดรูปโปรไฟล์ photo.jpg", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 6 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า account: อัปโหลดรูปโปรไฟล์ photo.jpg", async ({ page }) => {
+  // login ก่อน เพราะ /account ต้องเข้าสู่ระบบ
+  await page.goto("/login");
+  await page.getByLabel("อีเมล").fill("user@dnshop.test");
+  await page.getByLabel("รหัสผ่าน").fill("password123");
+  await page.getByRole("button", { name: "เข้าสู่ระบบ" }).click();
+  await page.waitForURL("**/account");
+
+  // ทำไม: ใช้ photo.jpg (JPG) ที่ช่องนี้รับเฉพาะ PNG/JPG ขนาดไม่เกิน 1MB
+  await page.getByLabel("รูปโปรไฟล์").setInputFiles(fixture("photo.jpg"));
+  await expect(page.getByText("ไฟล์ที่เลือก: photo.jpg")).toBeVisible();
+
+  await page.getByRole("button", { name: "บันทึกรูป" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "บันทึกรูปโปรไฟล์แล้ว" })).toBeVisible();
 });

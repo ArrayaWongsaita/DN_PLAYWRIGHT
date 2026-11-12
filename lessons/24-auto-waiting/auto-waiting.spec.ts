@@ -44,8 +44,12 @@ test("หน้า slow: กด ไปหน้าถัดไป แล้ว�
 // ข้อ 1: เหมือนตัวอย่างที่ 1 แต่ delay=1500 กด "โหลดข้อมูล" แล้วตรวจข้อความ "โหลดข้อมูลเสร็จแล้ว"
 // แนวทาง: goto("/playground/slow?delay=1500") แล้วทำตามตัวอย่างที่ 1 ได้เลย
 // ------------------------------------------------
-test.fixme("หน้า slow: โหลดข้อมูลด้วย delay 1500", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า slow: โหลดข้อมูลด้วย delay 1500", async ({ page }) => {
+  // ทำไม: click รอ overlay "กำลังเตรียมหน้า..." หายเอง จึงไม่ต้องรอเองหรือใช้ waitForTimeout
+  await page.goto("/playground/slow?delay=1500");
+  await page.getByRole("button", { name: "โหลดข้อมูล" }).click();
+  // ทำไม: 1.5 วินาทีน้อยกว่า timeout ของ expect (5 วินาที) จึงไม่ต้องเพิ่ม timeout
+  await expect(page.getByRole("status").filter({ hasText: "โหลดข้อมูลเสร็จแล้ว" })).toBeVisible();
 });
 
 
@@ -55,8 +59,18 @@ test.fixme("หน้า slow: โหลดข้อมูลด้วย delay 
 //        จากนั้นหาปุ่มด้วยชื่อ "ส่งฟอร์ม" (ชื่อเปลี่ยนเมื่อพร้อม) expect(...).toBeEnabled() แล้ว click
 //        ตรวจ role="status" ที่มีข้อความ "ส่งฟอร์มแล้ว"
 // ------------------------------------------------
-test.fixme("หน้า slow: ปุ่มส่งฟอร์มพร้อมใช้งานแล้วกดส่งได้", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า slow: ปุ่มส่งฟอร์มพร้อมใช้งานแล้วกดส่งได้", async ({ page }) => {
+  await page.goto("/playground/slow");
+
+  // ทำไม: ตอนแรกชื่อปุ่มคือ "รอสักครู่..." และ disabled; toBeDisabled ผ่านทันทีเพราะเป็นสถานะตอนเปิดหน้า
+  await expect(page.getByRole("button", { name: "รอสักครู่..." })).toBeDisabled();
+
+  // ทำไม: เมื่อพร้อม ชื่อปุ่มเปลี่ยนเป็น "ส่งฟอร์ม" จึงต้องหาด้วยชื่อใหม่; toBeEnabled รอจนปุ่มพร้อม (ไม่ต้องหน่วงเวลาเอง)
+  const submit = page.getByRole("button", { name: "ส่งฟอร์ม" });
+  await expect(submit).toBeEnabled();
+  await submit.click();
+
+  await expect(page.getByRole("status").filter({ hasText: "ส่งฟอร์มแล้ว" })).toBeVisible();
 });
 
 
@@ -66,8 +80,16 @@ test.fixme("หน้า slow: ปุ่มส่งฟอร์มพร้อ�
 //        ตรวจ role="status" ข้อความ "กำลังโหลดสินค้า..." ว่ามองเห็น แล้วตรวจว่าหายไป (toBeHidden)
 //        จากนั้นตรวจข้อความ "พบสินค้า 10 รายการ" (ไม่ต้องรอเอง expect รอให้)
 // ------------------------------------------------
-test.fixme("หน้าสินค้าโหลดช้า: ข้อความกำลังโหลดหายไปแล้วเห็นรายการ", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้าสินค้าโหลดช้า: ข้อความกำลังโหลดหายไปแล้วเห็นรายการ", async ({ page }) => {
+  await page.goto("/products?delay=2000");
+
+  // ทำไม: ข้อความกำลังโหลดแสดงอยู่ระหว่างรอ API 2 วินาที
+  const loading = page.getByRole("status").filter({ hasText: "กำลังโหลดสินค้า..." });
+  await expect(loading).toBeVisible();
+  // ทำไม: toBeHidden รอจนข้อความหาย (ภายใน 5 วินาที) ไม่ต้องเขียนรอเอง
+  await expect(loading).toBeHidden();
+
+  await expect(page.getByText("พบสินค้า 10 รายการ")).toBeVisible();
 });
 
 
@@ -77,6 +99,11 @@ test.fixme("หน้าสินค้าโหลดช้า: ข้อคว
 //        expect(...).toBeVisible({ timeout: 10_000 }) ตรวจข้อความ "โหลดข้อมูลเสร็จแล้ว"
 //        ถ้าไม่ใส่ timeout จะ fail ที่ 5 วินาที ลองลบดูแล้วอ่านข้อความ error
 // ------------------------------------------------
-test.fixme("หน้า slow: โหลดข้อมูล 7 วินาที ต้องเพิ่ม timeout ของ expect", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า slow: โหลดข้อมูล 7 วินาที ต้องเพิ่ม timeout ของ expect", async ({ page }) => {
+  await page.goto("/playground/slow?delay=7000");
+  await page.getByRole("button", { name: "โหลดข้อมูล" }).click();
+
+  // ทำไม: ข้อความขึ้นหลัง 7 วินาที เกิน timeout เริ่มต้นของ expect (5 วินาที) จึงเพิ่ม timeout เฉพาะ assertion นี้
+  // (ไม่แก้ทั้งโปรเจกต์ และไม่ใช้ waitForTimeout)
+  await expect(page.getByRole("status").filter({ hasText: "โหลดข้อมูลเสร็จแล้ว" })).toBeVisible({ timeout: 10_000 });
 });

@@ -56,8 +56,17 @@ test("หน้า new-tab: เปิดหน้าต่างแชทแล�
 // แนวทาง: ใช้ context.waitForEvent("page") สร้าง promise ก่อนกดลิงก์ ตรวจหัวข้อในหน้าใหม่ด้วย newPage
 //        แล้วตรวจแท็บเดิม expect(page).toHaveURL(/\/playground\/new-tab$/)
 // ------------------------------------------------
-test.fixme("หน้า new-tab: แท็บเดิมยังอยู่ที่เดิมหลังเปิดคู่มือ", async ({ page, context }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า new-tab: แท็บเดิมยังอยู่ที่เดิมหลังเปิดคู่มือ", async ({ page, context }) => {
+  await page.goto("/playground/new-tab");
+
+  // ทำไม: สร้าง promise ก่อนกดลิงก์ (ไม่ await) ไม่งั้นอาจพลาด event หน้าใหม่
+  const pagePromise = context.waitForEvent("page");
+  await page.getByRole("link", { name: "เปิดคู่มือการสั่งซื้อในแท็บใหม่" }).click();
+  const newPage = await pagePromise;
+
+  await expect(newPage.getByRole("heading", { level: 1, name: "คู่มือการสั่งซื้อ" })).toBeVisible();
+  // ทำไม: ตัวแปร page ยังชี้แท็บเดิม จึงตรวจได้ว่าแท็บเดิมไม่ได้ไปไหน
+  await expect(page).toHaveURL(/\/playground\/new-tab$/);
 });
 
 
@@ -66,8 +75,16 @@ test.fixme("หน้า new-tab: แท็บเดิมยังอยู่�
 // แนวทาง: const popupPromise = page.waitForEvent("popup") ก่อนกดลิงก์ "เปิดคู่มือการสั่งซื้อในแท็บใหม่"
 //        แล้วตรวจ URL และหัวข้อ "คู่มือการสั่งซื้อ" ของหน้าที่ได้
 // ------------------------------------------------
-test.fixme("หน้า new-tab: รับแท็บคู่มือด้วย popup", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า new-tab: รับแท็บคู่มือด้วย popup", async ({ page }) => {
+  await page.goto("/playground/new-tab");
+
+  // ทำไม: ลิงก์ target="_blank" ก็นับเป็น popup ของหน้านี้ ใช้ page.waitForEvent("popup") ได้ (ตั้งรอก่อนกดเหมือนเดิม)
+  const popupPromise = page.waitForEvent("popup");
+  await page.getByRole("link", { name: "เปิดคู่มือการสั่งซื้อในแท็บใหม่" }).click();
+  const popup = await popupPromise;
+
+  await expect(popup).toHaveURL(/\/help\/ordering$/);
+  await expect(popup.getByRole("heading", { level: 1, name: "คู่มือการสั่งซื้อ" })).toBeVisible();
 });
 
 
@@ -76,8 +93,20 @@ test.fixme("หน้า new-tab: รับแท็บคู่มือด้�
 // แนวทาง: เหมือนตัวอย่างที่ 2 เปลี่ยนข้อความ ตรวจว่ารายการข้อความแชทมีข้อความนั้น (toHaveText)
 //        อย่าลืม chat.waitForLoadState("load") หลังได้หน้าต่างแชท และ getByLabel("ข้อความ", { exact: true })
 // ------------------------------------------------
-test.fixme("หน้า new-tab: ส่งข้อความในแชทอีกข้อความหนึ่ง", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า new-tab: ส่งข้อความในแชทอีกข้อความหนึ่ง", async ({ page }) => {
+  await page.goto("/playground/new-tab");
+
+  const popupPromise = page.waitForEvent("popup");
+  await page.getByRole("button", { name: "เปิดหน้าต่างแชท" }).click();
+  const chat = await popupPromise;
+
+  // ทำไม: รอโหลดเสร็จก่อนพิมพ์ ไม่งั้นฟอร์มอาจยังไม่พร้อมแล้วข้อความหาย
+  await chat.waitForLoadState("load");
+  // ทำไม: exact: true เพราะ aria-label "ข้อความแชท" ของรายการก็มีคำว่า "ข้อความ"
+  await chat.getByLabel("ข้อความ", { exact: true }).fill("ขอสอบถามสินค้าหน่อยครับ");
+  await chat.getByRole("button", { name: "ส่ง", exact: true }).click();
+
+  await expect(chat.getByRole("list", { name: "ข้อความแชท" }).getByRole("listitem")).toHaveText("ขอสอบถามสินค้าหน่อยครับ");
 });
 
 
@@ -86,8 +115,24 @@ test.fixme("หน้า new-tab: ส่งข้อความในแชท�
 // แนวทาง: รอ chat.waitForLoadState("load") แล้ว fill + กด "ส่ง" สองรอบในหน้าต่างแชท
 //        expect(รายการข้อความ).toHaveText(["ข้อความแรก", "ข้อความที่สอง"]) (ส่ง array ได้ ตรวจครบทุกรายการตามลำดับ)
 // ------------------------------------------------
-test.fixme("หน้า new-tab: ส่งสองข้อความในแชท", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 4 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า new-tab: ส่งสองข้อความในแชท", async ({ page }) => {
+  await page.goto("/playground/new-tab");
+
+  const popupPromise = page.waitForEvent("popup");
+  await page.getByRole("button", { name: "เปิดหน้าต่างแชท" }).click();
+  const chat = await popupPromise;
+  await chat.waitForLoadState("load");
+
+  const box = chat.getByLabel("ข้อความ", { exact: true });
+  await box.fill("ข้อความแรก");
+  await chat.getByRole("button", { name: "ส่ง", exact: true }).click();
+  // ทำไม: รอให้ข้อความแรกขึ้นก่อน (ช่องกรอกถูกล้าง) แล้วจึงพิมพ์ข้อความที่สอง
+  await expect(box).toHaveValue("");
+  await box.fill("ข้อความที่สอง");
+  await chat.getByRole("button", { name: "ส่ง", exact: true }).click();
+
+  // ทำไม: toHaveText รับ array ตรวจทุกรายการตามลำดับ (จำนวนต้องเท่ากันด้วย)
+  await expect(chat.getByRole("list", { name: "ข้อความแชท" }).getByRole("listitem")).toHaveText(["ข้อความแรก", "ข้อความที่สอง"]);
 });
 
 
@@ -96,6 +141,17 @@ test.fixme("หน้า new-tab: ส่งสองข้อความใน�
 // แนวทาง: หลังเปิดแชท (เหมือนตัวอย่างที่ 2) เรียก await chat.close() แล้วตรวจที่ page เดิมว่า
 //        หัวข้อระดับ 1 "New tab" ยังมองเห็น และ chat.isClosed() เป็น true (ใช้ expect(chat.isClosed()).toBe(true))
 // ------------------------------------------------
-test.fixme("หน้า new-tab: ปิดแชทแล้วกลับมาแท็บเดิม", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 5 ตรงนี้ แล้วเปลี่ยน test.fixme เป็น test
+test("หน้า new-tab: ปิดแชทแล้วกลับมาแท็บเดิม", async ({ page }) => {
+  await page.goto("/playground/new-tab");
+
+  const popupPromise = page.waitForEvent("popup");
+  await page.getByRole("button", { name: "เปิดหน้าต่างแชท" }).click();
+  const chat = await popupPromise;
+  await expect(chat.getByRole("heading", { level: 1, name: "แชทกับร้าน" })).toBeVisible();
+
+  await chat.close();
+  // ทำไม: isClosed() คืนค่าทันที (ไม่ใช่ Promise) จึงใช้ expect(...).toBe ได้
+  expect(chat.isClosed()).toBe(true);
+  // ทำไม: แท็บเดิมไม่ถูกกระทบ ใช้งานต่อได้
+  await expect(page.getByRole("heading", { level: 1, name: "New tab" })).toBeVisible();
 });
