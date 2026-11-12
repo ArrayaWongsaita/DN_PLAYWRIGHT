@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 test("หน้า playground มีลิงก์ไปทุกหน้าย่อย", async ({ page }) => {
   await page.goto("/playground");
@@ -219,13 +219,37 @@ test("flaky: delayMax หน่วงก่อนแสดงผล", async ({ p
 });
 
 test.describe("overlay ที่ต้องเปิดเอง", () => {
-  test("หน้าแรกไม่มีแบนเนอร์และป๊อปอัปเป็นค่าเริ่มต้น", async ({ page }) => {
+  // รอให้ hydrate เสร็จก่อน (greeting ถูกเติมโดย useEffect ฝั่ง client) แล้วค่อยเดินนาฬิกา
+  // ไม่งั้น timer ของ overlay อาจถูกตั้งหลัง runFor และ test ผ่านทั้งที่ไม่ได้พิสูจน์อะไร
+  async function hydratedHome(page: Page, url: string) {
     await page.clock.install();
-    await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1, name: "DN Shop" })).toBeVisible();
+    await page.goto(url);
+    await expect(page.getByTestId("greeting")).not.toBeEmpty();
+  }
+
+  async function hydratedProducts(page: Page) {
+    await page.clock.install();
+    await page.reload();
+    await expect(page.getByRole("list", { name: "รายการสินค้า" })).toBeVisible();
+  }
+
+  test("หน้าแรกไม่มีแบนเนอร์และป๊อปอัปเป็นค่าเริ่มต้น", async ({ page }) => {
+    await hydratedHome(page, "/");
     await page.clock.runFor(5000);
     await expect(page.getByRole("dialog", { name: "การใช้คุกกี้" })).toBeHidden();
     await expect(page.getByRole("dialog", { name: "โปรโมชันพิเศษ" })).toBeHidden();
+  });
+
+  test("ตัวควบคุม: วิธีรอ hydrate + runFor เดียวกัน เห็นแบนเนอร์เมื่อเปิด cookieBanner=1", async ({ page }) => {
+    await hydratedHome(page, "/?cookieBanner=1");
+    await page.clock.runFor(3000);
+    await expect(page.getByRole("dialog", { name: "การใช้คุกกี้" })).toBeVisible();
+  });
+
+  test("ตัวควบคุม: วิธีเดียวกันเห็นป๊อปอัปเมื่อเปิด promo=1", async ({ page }) => {
+    await hydratedHome(page, "/?promo=1");
+    await page.clock.runFor(3000);
+    await expect(page.getByRole("dialog", { name: "โปรโมชันพิเศษ" })).toBeVisible();
   });
 
   test("cookieBanner=1 แล้วแบนเนอร์โผล่และปิดได้ และไม่โผล่อีกหลังยอมรับ", async ({ page }) => {
@@ -239,8 +263,7 @@ test.describe("overlay ที่ต้องเปิดเอง", () => {
     expect((await page.context().cookies()).some((c) => c.name === "dn_cookie_consent")).toBe(true);
 
     await page.goto("/products");
-    await page.clock.install();
-    await page.reload();
+    await hydratedProducts(page);
     await page.clock.runFor(5000);
     await expect(banner).toBeHidden();
   });
@@ -262,8 +285,7 @@ test.describe("overlay ที่ต้องเปิดเอง", () => {
     await expect(popup).toBeHidden();
 
     await page.goto("/products");
-    await page.clock.install();
-    await page.reload();
+    await hydratedProducts(page);
     await page.clock.runFor(5000);
     await expect(popup).toBeHidden();
   });
@@ -271,6 +293,10 @@ test.describe("overlay ที่ต้องเปิดเอง", () => {
   test("overlay ไม่โผล่ในหน้า embed", async ({ page }) => {
     await page.clock.install();
     await page.goto("/embed/card-form?cookieBanner=1&promo=1");
+    // พิสูจน์ว่า hydrate แล้ว: กดยืนยันบัตรผิดแล้วได้ alert จาก client
+    await page.getByLabel("หมายเลขบัตร").fill("0000");
+    await page.getByRole("button", { name: "ยืนยันบัตร" }).click();
+    await expect(page.getByRole("alert").filter({ hasText: "บัตรไม่ถูกต้อง" })).toBeVisible();
     await page.clock.runFor(5000);
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
