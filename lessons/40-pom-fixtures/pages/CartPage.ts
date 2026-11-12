@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 // Page Object ของหน้า /cart (เขียนเสร็จแล้ว เหมือนที่เป็นเฉลยของบท 38)
 export class CartPage {
@@ -32,7 +32,13 @@ export class CartPage {
   }
 
   async increase(productName: string): Promise<void> {
-    await this.items.filter({ hasText: productName }).getByRole("button", { name: "เพิ่มจำนวน" }).click();
+    const item = this.items.filter({ hasText: productName });
+    const quantity = item.getByLabel("จำนวน");
+    const before = Number(await quantity.inputValue());
+    await item.getByRole("button", { name: "เพิ่มจำนวน" }).click();
+    // รอให้จำนวนเพิ่มขึ้นจริงก่อนจบ method: ถ้ากดสองครั้งติดกันโดยไม่รอ ครั้งที่สองอาจอ่านจำนวนเก่า (ทำให้เพิ่มแค่ 1)
+    // การรอนี้เป็นส่วนของ action ไม่ใช่การตัดสินผลของ test
+    await expect(quantity).toHaveValue(String(before + 1));
   }
 
   async remove(productName: string): Promise<void> {

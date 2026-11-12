@@ -108,7 +108,11 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
 - **ไม่ควรเก็บสถานะที่ผูกกับผู้ใช้หรือ session** ใน worker fixture เช่น ตะกร้าหรือ cookie เพราะแต่ละ test มี browser context ของตัวเอง (บท 20) การแชร์ข้ามกันทำให้ test ไม่เป็นอิสระ
 - ถ้าต้องเตรียมข้อมูลที่แก้ไขได้ ให้ใช้ fixture แบบ test (ค่าเริ่มต้น) ที่สร้างใหม่ทุก test
 
-### 5. เขียน CheckoutPage เอง
+### 5. method ที่รอให้ action เสร็จจริง
+
+ดู `increase()` ใน `pages/CartPage.ts`: มันอ่านจำนวนก่อนกด กดปุ่ม แล้วรอให้ช่อง "จำนวน" เป็นค่าใหม่ก่อนจบ ที่ทำแบบนี้เพราะเราลองเรียกสองครั้งติดกันโดยไม่รอ (ในบท 38) แล้วล้มไป 3 จาก 20 รอบ การรอที่ทำให้ action "เสร็จจริง" เป็นหน้าที่ที่เหมาะกับ Page Object เพราะ test ทุกตัวที่เรียก method นี้ได้ประโยชน์โดยไม่ต้องรู้รายละเอียด
+
+### 6. เขียน CheckoutPage เอง
 
 `pages/CheckoutPage.ts` เป็นโครงที่ locator เขียนไว้แล้ว (ช่องกรอก, select วิธีชำระเงิน, checkbox, `order-total`, ปุ่มยืนยัน) ส่วน method ยังโยน `new Error("👉 ยังไม่ได้เขียน method นี้")` ข้อ 3 และ 4 ให้เติม fixture `checkoutPage` เขียนไว้ให้แล้วใน `fixtures.ts` จึงไม่ต้องแตะ
 
