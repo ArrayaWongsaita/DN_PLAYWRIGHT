@@ -62,8 +62,17 @@ test("หน้า /products เลือกหมวดหนังสือแ
 //        ถ้าไม่มี AI: เลือก "เรียงตาม" เป็น "ราคาต่ำไปสูง" (getByLabel("เรียงตาม").selectOption) แล้วตรวจว่าการ์ดแรกคือ "สมุดโน้ตลายจุด" (ราคา 120 บาท ถูกสุด)
 //        วางโค้ดแทนที่ในฟังก์ชันด้านล่าง แล้วเปลี่ยน test.fixme เป็น test ตรวจด้วยเกณฑ์ 4 ข้อด้านบน
 // ------------------------------------------------
-test.fixme("หน้า /products เรียงราคาต่ำไปสูงแล้วสินค้าแรกต้องเป็นสมุดโน้ตลายจุด", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 1 ตรงนี้ (วางโค้ดที่ AI เขียน แล้วแก้ให้ผ่านเกณฑ์ 4 ข้อ)
+test("หน้า /products เรียงราคาต่ำไปสูงแล้วสินค้าแรกต้องเป็นสมุดโน้ตลายจุด", async ({ page }) => {
+  await page.goto("/products");
+
+  // เฉลย: เกณฑ์ข้อ 1 ใช้ getByLabel กับ select ที่มี label "เรียงตาม" (ไม่ใช้ CSS selector ของ select)
+  await page.getByLabel("เรียงตาม").selectOption({ label: "ราคาต่ำไปสูง" });
+
+  // เกณฑ์ข้อ 2 และ 3: assertion ที่รอเองจนรายการเรียงใหม่ ตรวจ "การ์ดแรก" ด้วย first()
+  // first() ใช้ได้ตรงนี้เพราะเราตั้งใจถามจริงๆ ว่าใบแรกคืออะไร (ไม่ได้ใช้เพื่อหนี strict mode)
+  const firstCard = page.getByRole("list", { name: "รายการสินค้า" }).getByRole("listitem").first();
+  await expect(firstCard).toContainText("สมุดโน้ตลายจุด");
+  await expect(firstCard).toContainText("120 บาท");
 });
 
 
@@ -73,8 +82,20 @@ test.fixme("หน้า /products เรียงราคาต่ำไปส
 //        ตรวจ data-testid subtotal / discount / total (getByTestId) ตัวช่วย addToCart ด้านบนใช้ได้เลย
 //        ถ้าไม่มี AI: เขียนเองตามขั้นเดียวกัน (ลดส่วนลด 10% ของ 590 = 59 บาท)
 // ------------------------------------------------
-test.fixme("ตะกร้า ใส่โค้ด DN10 กับเมาส์ไร้สายแล้วต้องลด 59 บาท", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 2 ตรงนี้
+test("ตะกร้า ใส่โค้ด DN10 กับเมาส์ไร้สายแล้วต้องลด 59 บาท", async ({ page }) => {
+  // เกณฑ์ข้อ 4: test เตรียมของเอง (ผ่านตัวช่วย) ไม่พึ่ง test อื่น ทำงานคนเดียวได้
+  await addToCart(page, "เมาส์ไร้สาย");
+  await page.goto("/cart");
+
+  await page.getByLabel("โค้ดส่วนลด").fill("DN10");
+  await page.getByRole("button", { name: "ใช้โค้ด" }).click();
+
+  // ข้อความแจ้งผล (role="status") รอเอง และยอดเงินใช้ data-testid ตามที่แอปเตรียมไว้
+  await expect(page.getByRole("status").filter({ hasText: "ใช้โค้ด DN10 แล้ว ลด 10%" })).toBeVisible();
+  // 590 x 10% = 59 (แอปปัดเศษด้วย Math.round) ยอดสุทธิ 590 - 59 = 531
+  await expect(page.getByTestId("subtotal")).toHaveText("590 บาท");
+  await expect(page.getByTestId("discount")).toHaveText("59 บาท");
+  await expect(page.getByTestId("total")).toHaveText("531 บาท");
 });
 
 
@@ -84,6 +105,16 @@ test.fixme("ตะกร้า ใส่โค้ด DN10 กับเมาส�
 //        ต้องกรองด้วย filter({ hasText }) (ถ้า AI เขียน getByRole("alert") เฉยๆ แล้วรันล้มด้วย strict mode violation นั่นคือตัวอย่างของสิ่งที่ต้องแก้)
 //        ผลที่ต้องเห็นคือ "โค้ดส่วนลดไม่ถูกต้อง" และยอด discount ยังเป็น "0 บาท"
 // ------------------------------------------------
-test.fixme("ตะกร้า ใส่โค้ดส่วนลดผิดต้องเห็นข้อความผิดพลาดและไม่ลดราคา", async ({ page }) => {
-  // 👉 เขียน test ของข้อ 3 ตรงนี้
+test("ตะกร้า ใส่โค้ดส่วนลดผิดต้องเห็นข้อความผิดพลาดและไม่ลดราคา", async ({ page }) => {
+  await addToCart(page, "เมาส์ไร้สาย");
+  await page.goto("/cart");
+
+  await page.getByLabel("โค้ดส่วนลด").fill("ผิดแน่นอน");
+  await page.getByRole("button", { name: "ใช้โค้ด" }).click();
+
+  // ต้อง filter ด้วยข้อความ เพราะ Next.js มี role="alert" ว่างๆ ทุกหน้า getByRole("alert") เฉยๆ จะเจอสองตัวและล้มด้วย strict mode
+  await expect(page.getByRole("alert").filter({ hasText: "โค้ดส่วนลดไม่ถูกต้อง" })).toBeVisible();
+  // ตรวจผลข้างเคียงด้วย: โค้ดผิดต้องไม่ทำให้ราคาเปลี่ยน
+  await expect(page.getByTestId("discount")).toHaveText("0 บาท");
+  await expect(page.getByTestId("total")).toHaveText("590 บาท");
 });

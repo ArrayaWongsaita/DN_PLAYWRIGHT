@@ -51,13 +51,13 @@ test("หน้า /products การ์ดหูฟังต้องแสด
 // ข้อ 1: test เดิมหาลิงก์ชื่อเก่าแบบตรงตัวเป๊ะ แต่ชื่อเปลี่ยนแล้ว
 // แนวทาง: อ่าน error (Locator expected to be visible / element(s) not found) แล้วดู snapshot ว่าลิงก์ชื่ออะไรตอนนี้ แก้ชื่อใน locator
 // ------------------------------------------------
-test.fixme("ลิงก์สินค้าหูฟังบนหน้า /products ต้องแสดงอยู่", async ({ page }) => {
+test("ลิงก์สินค้าหูฟังบนหน้า /products ต้องแสดงอยู่", async ({ page }) => {
   await mockRenamedHeadphones(page);
   await page.goto("/products");
 
-  // โค้ดนี้ล้ม: ชื่อเปลี่ยนไปแล้ว
-  await expect(page.getByRole("link", { name: "หูฟังไร้สาย DN Buds", exact: true })).toBeVisible();
-  // 👉 แก้บรรทัดด้านบน แล้วเปลี่ยน test.fixme เป็น test
+  // เฉลย: แก้ชื่อให้ตรงกับหน้าใหม่ และคง exact: true ไว้ (ถ้าถอด exact ออก ชื่อเก่าจะเป็นส่วนหนึ่งของชื่อใหม่
+  // test ผ่านโดยไม่ได้ยืนยันชื่อใหม่ ซึ่งเป็นการ "รักษาด้วยการทำให้ test อ่อนลง")
+  await expect(page.getByRole("link", { name: "หูฟังไร้สาย DN Buds Pro", exact: true })).toBeVisible();
 });
 
 
@@ -66,14 +66,13 @@ test.fixme("ลิงก์สินค้าหูฟังบนหน้า /
 // แนวทาง: ดูข้อความที่หน้าแสดงจริงใน error (Expected / Received) แล้วแก้ค่าที่คาดหวัง
 //        คิดด้วยว่า "ราคาเปลี่ยน" เป็นการเปลี่ยนที่ตั้งใจ (แก้ test) หรือเป็นบั๊ก (ควรปล่อยให้ล้มแล้วแจ้งทีม) ข้อนี้ถือว่าตั้งใจ
 // ------------------------------------------------
-test.fixme("การ์ดหูฟังต้องแสดงราคา", async ({ page }) => {
+test("การ์ดหูฟังต้องแสดงราคา", async ({ page }) => {
   await mockRenamedHeadphones(page);
   await page.goto("/products");
 
   const card = page.getByRole("listitem").filter({ hasText: "หูฟังไร้สาย DN Buds" });
-  // โค้ดนี้ล้ม: ราคาเปลี่ยนแล้ว
-  await expect(card).toContainText("1,290 บาท");
-  // 👉 แก้บรรทัดด้านบน แล้วเปลี่ยน test.fixme เป็น test
+  // เฉลย: แก้เป็นราคาใหม่ (การเปลี่ยนราคาเป็นของตั้งใจ) ยังคงตรวจ "ค่าราคาจริง" ไม่ลดเหลือแค่ toBeVisible
+  await expect(card).toContainText("1,490 บาท");
 });
 
 
@@ -82,7 +81,7 @@ test.fixme("การ์ดหูฟังต้องแสดงราคา",
 // แนวทาง: ทำตามขั้นข้อ 1 ดูข้อความ status ที่หน้าแสดงจริง แล้วแก้ข้อความที่รอ
 //        สังเกตว่า locator ของปุ่ม (getByRole + filter) ยังใช้ได้ แก้เฉพาะจุดที่ผิด (healer ที่ดีแก้น้อยที่สุด)
 // ------------------------------------------------
-test.fixme("กดเพิ่มหูฟังลงตะกร้าแล้วต้องเห็นข้อความสถานะ", async ({ page }) => {
+test("กดเพิ่มหูฟังลงตะกร้าแล้วต้องเห็นข้อความสถานะ", async ({ page }) => {
   await mockRenamedHeadphones(page);
   await page.goto("/products");
 
@@ -92,7 +91,7 @@ test.fixme("กดเพิ่มหูฟังลงตะกร้าแล�
     .getByRole("button", { name: "เพิ่มลงตะกร้า" })
     .click();
 
-  // โค้ดนี้ล้ม: ข้อความมีชื่อสินค้าใหม่
-  await expect(page.getByRole("status").filter({ hasText: 'เพิ่ม "หูฟังไร้สาย DN Buds" ลงตะกร้าแล้ว' })).toBeVisible();
-  // 👉 แก้บรรทัดด้านบน แล้วเปลี่ยน test.fixme เป็น test
+  // เฉลย: ข้อความสถานะมีชื่อสินค้า (ชื่อใหม่) จึงแก้เฉพาะข้อความนี้ ส่วน locator ของปุ่มด้านบนไม่ต้องแตะ
+  // (filter hasText แบบ substring ยังหาการ์ดเจอเพราะชื่อเดิมเป็นส่วนหนึ่งของชื่อใหม่)
+  await expect(page.getByRole("status").filter({ hasText: 'เพิ่ม "หูฟังไร้สาย DN Buds Pro" ลงตะกร้าแล้ว' })).toBeVisible();
 });
